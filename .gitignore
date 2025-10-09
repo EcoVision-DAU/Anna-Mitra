@@ -6,4 +6,4 @@
 /Project/public/images/
 
 # Environment variables
-/Project/.env
+# /Project/.env
