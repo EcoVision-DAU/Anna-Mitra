@@ -1,0 +1,60 @@
+<%- include('../partials/header', { pageTitle: 'My Donations' }) %>
+<%- include('../partials/navbar-dark') %>
+
+<div class="d-flex am-dark" style="height: 95vh;">
+  <%- include('../partials/sidebar-donor', { active: 'donations' }) %>
+
+  <div class="content w-100 p-4 text-white" style="overflow-y:auto;">
+    <div class="d-flex align-items-center mb-3">
+      <h4 class="mb-0">My Donations</h4>
+      <a class="btn btn-info ms-auto" href="/donations/new">New Donation</a>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>NGO</th>
+                <th>Type</th>
+                <th>Amount/Items</th>
+                <th>Status</th>
+                <th>Receipt</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% (donations || []).forEach(d => { %>
+                <tr>
+                  <td><%= d.date %></td>
+                  <td><a class="link-info text-decoration-none" href="/ngos/<%= d.ngoId %>"><%= d.ngoName %></a></td>
+                  <td><%= d.type %></td>
+                  <td><%= d.summary %></td>
+                  <td>
+                    <span class="badge <%= d.status === 'Completed' ? 'bg-success' : (d.status === 'Pending' ? 'bg-warning' : 'bg-secondary') %>">
+                      <%= d.status %>
+                    </span>
+                  </td>
+                  <td>
+                    <% if (d.receiptUrl) { %>
+                      <a href="<%= d.receiptUrl %>" class="btn btn-sm btn-outline-light" target="_blank">View</a>
+                    <% } else { %>
+                      <span class="text-secondary">—</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+              <% if (!donations || donations.length === 0) { %>
+                <tr><td colspan="6" class="text-center text-secondary">No donations yet.</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

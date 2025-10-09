@@ -1,0 +1,70 @@
+<%- include('../partials/header', { pageTitle: 'Account Settings' }) %>
+<%- include('../partials/navbar-dark') %>
+
+<div class="d-flex am-dark" style="height: 95vh;">
+  <%- include('../partials/sidebar-donor', { active: 'account' }) %>
+
+  <div class="content w-100 p-4 text-white" style="overflow-y:auto;">
+    <div class="mb-3">
+      <h4 class="mb-0">Account</h4>
+      <small class="text-secondary">Manage your profile details</small>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-12 col-lg-6">
+        <div class="card">
+          <div class="card-body">
+            <form method="POST" action="/donor/account" enctype="multipart/form-data">
+              <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" name="name" value="<%= donor?.name || '' %>" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="email" value="<%= donor?.email || '' %>" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Phone</label>
+                <input type="text" class="form-control" name="phone" value="<%= donor?.phone || '' %>" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Avatar</label>
+                <input type="file" class="form-control" name="avatar" accept="image/*" />
+                <% if (donor?.avatar) { %>
+                  <small class="text-secondary d-block mt-1">Current: <%= donor.avatar %></small>
+                <% } %>
+              </div>
+              <button class="btn btn-info" type="submit">Save Changes</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="text-secondary mb-3">Security</h6>
+            <form method="POST" action="/donor/account/password">
+              <div class="mb-3">
+                <label class="form-label">Current Password</label>
+                <input type="password" class="form-control" name="currentPassword" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-control" name="newPassword" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control" name="confirmPassword" required />
+              </div>
+              <button class="btn btn-outline-light" type="submit">Update Password</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

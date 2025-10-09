@@ -1,9 +1,13 @@
 const express = require('express');
-const router = express.Router();
 const donorController = require('../controllers/donor.controller');
-const { isLoggedIn, isDonor } = require('../middlewares/auth.middleware');
 
-// All routes here require user to be logged in and to be a donor
-router.use(isLoggedIn, isDonor);
+const router = express.Router();
+
+// Donor panel routes
+router.get('/', donorController.getDashboard);
+router.get('/ngos', donorController.getNgos);
+router.get('/donations', donorController.getDonations);
+router.get('/notifications', donorController.getNotifications);
+router.get('/account', donorController.getAccount);
 
 module.exports = router;

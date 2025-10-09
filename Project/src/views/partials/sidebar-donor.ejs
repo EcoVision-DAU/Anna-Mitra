@@ -1,0 +1,55 @@
+<div class="sidebar">
+  <div class="sidebar-main open" id="sidebar-donor">
+    <div class="sidebar-content">
+      <div class="sidebar-header d-flex align-items-center border-bottom border-secondary pb-3">
+        <button class="btn p-0 border-0 bg-transparent fs-4" id="toggle-donor" aria-controls="sidebar-donor" aria-label="Toggle sidebar">
+          <i class="bi bi-list px-1 mx-3"></i>
+        </button>
+        <div class="d-flex flex-column">
+          <h3 class="fs-5 mb-0" style="color: var(--am-darktheme-font);">AnnaMitra</h3>
+          <small class="text-secondary">Donor Panel</small>
+        </div>
+      </div>
+
+      <div class="sidebar-body pt-3">
+        <a href="/donor" class="d-flex align-items-center mb-1 <%= (active === 'dashboard') ? 'active' : '' %>">
+          <i class="bi bi-speedometer2 fs-5 px-1 mx-3"></i><span>Dashboard</span>
+        </a>
+        <a href="/donor/ngos" class="d-flex align-items-center mb-1 <%= (active === 'ngos') ? 'active' : '' %>">
+          <i class="bi bi-building-heart fs-5 px-1 mx-3"></i><span>Find NGOs</span>
+        </a>
+        <a href="/donor/donations" class="d-flex align-items-center mb-1 <%= (active === 'donations') ? 'active' : '' %>">
+          <i class="bi bi-box2-heart fs-5 px-1 mx-3"></i><span>My Donations</span>
+        </a>
+        <a href="/donor/notifications" class="d-flex align-items-center mb-1 <%= (active === 'notifications') ? 'active' : '' %>">
+          <i class="bi bi-bell fs-5 px-1 mx-3"></i><span>Notifications</span>
+        </a>
+        <a href="/donor/account" class="d-flex align-items-center mb-1 <%= (active === 'account') ? 'active' : '' %>">
+          <i class="bi bi-person fs-5 px-1 mx-3"></i><span>Account</span>
+        </a>
+
+        <hr class="border-secondary my-3">
+
+        <a href="/logout" class="d-flex align-items-center mb-1">
+          <i class="bi bi-box-arrow-right fs-5 px-1 mx-3"></i><span>Logout</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const sidebar = document.getElementById('sidebar-donor');
+  const toggle = document.getElementById('toggle-donor');
+  const isMobile = () => window.matchMedia('(max-width: 992px)').matches;
+
+  toggle?.addEventListener('click', () => {
+    sidebar.classList.toggle('close');
+  });
+
+  window.addEventListener('resize', () => {
+    if (!isMobile()) sidebar.classList.remove('close');
+  });
+})();
+</script>

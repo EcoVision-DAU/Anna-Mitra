@@ -1,0 +1,44 @@
+<%- include('../partials/header', { pageTitle: 'Find NGOs' }) %>
+<%- include('../partials/navbar-dark') %>
+
+<div class="d-flex am-dark" style="height: 95vh;">
+  <%- include('../partials/sidebar-donor', { active: 'ngos' }) %>
+
+  <div class="content w-100 p-4 text-white" style="overflow-y:auto;">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <h4 class="mb-0">Find NGOs</h4>
+      <form class="ms-auto d-flex" method="GET" action="/donor/ngos">
+        <input class="form-control me-2" type="search" name="q" value="<%= q || '' %>" placeholder="Search by name, cause..." />
+        <button class="btn btn-info" type="submit"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+
+    <div class="row g-4">
+      <% (ngos || []).forEach(n => { %>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100">
+            <img src="<%= n.cover || '/images/logo1.png' %>" class="card-img-top" alt="<%= n.name %>">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title"><%= n.name %></h5>
+              <p class="card-text text-secondary"><%= n.tagline || n.description?.slice(0,120) || '—' %></p>
+              <div class="mt-auto d-flex gap-2">
+                <a href="/ngos/<%= n._id %>" class="btn btn-outline-light">Details</a>
+                <a href="/donations/new?ngo=<%= n._id %>" class="btn btn-info">Donate</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+      <% if (!ngos || ngos.length === 0) { %>
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body text-center text-secondary">No NGOs found.</div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
