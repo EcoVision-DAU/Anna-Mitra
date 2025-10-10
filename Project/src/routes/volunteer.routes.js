@@ -1,34 +1,20 @@
 const express = require('express');
-const router = express.Router();
 const volunteerController = require('../controllers/volunteer.controller');
-const { isLoggedIn, isVolunteer } = require('../middlewares/auth.middleware');
 
-// All routes here require user to be logged in and to be a volunteer
-router.use(isLoggedIn, isVolunteer);
+const router = express.Router();
 
-// Dashboard Route
-router.get('/', volunteerController.renderDashboardPage);
+// TEMP DEBUG: confirm we really have functions
+// (You can remove these logs once it works)
+console.log('[volunteer.routes] controller type:', typeof volunteerController);
+console.log('[volunteer.routes] controller keys:', Object.keys(volunteerController || {}));
 
-// Assigned Tasks Route
-router.get('/assigned-tasks', volunteerController.renderAssignedTasksPage);
+// Dashboard
+router.get('/', volunteerController.getDashboard);
 
-// Donation History Route
-router.get('/donation-history', volunteerController.renderDonationHistoryPage);
-
-// Notifications Route
-router.get('/notifications', volunteerController.renderNotificationsPage);
-
-// NGOs Route
-router.get('/ngos', volunteerController.renderNgosPage);
-
-// Joined NGOs Route
-router.get('/joined-ngos', volunteerController.renderJoinedNgosPage);
-
-// Specific NGO Details Route
-router.get('/ngos/:id', volunteerController.renderNgoDetailsPage);
-
-// Manage Account Route
-router.get('/account', volunteerController.renderManageAccountPage);
-
+// Lists
+router.get('/assigned-tasks', volunteerController.getAssignedTasks);
+router.get('/joined-ngos', volunteerController.getJoinedNgos);
+router.get('/notifications', volunteerController.getNotifications);
+router.get('/account', volunteerController.getAccount);
 
 module.exports = router;

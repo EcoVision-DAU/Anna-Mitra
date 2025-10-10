@@ -1,97 +1,51 @@
-
-const mongoos = require('mongoose');
-const User = require('../models/user.model');
-const VolunteerProfile = require('../models/volunteerprofile.model');
-const { volunteerProfileSchema } = require('../utils/joiSchemas');
-const safeRender = require('../utils/safeRender');
 const catchAsync = require('../utils/catchAsync');
 
+const getDashboard = catchAsync(async (req, res) => {
+  const stats = { openTasks: 3, completedTasks: 8, joinedNgos: 2 };
+  const upcoming = [
+    { _id: 't1', title: 'Distribute meal kits', ngoId: 'ngo1', ngoName: 'Helping Hands', dueDate: '2025-10-12', status: 'Pending' },
+    { _id: 't2', title: 'Assist at food camp', ngoId: 'ngo2', ngoName: 'Green Earth', dueDate: '2025-10-14', status: 'In Progress' }
+  ];
+  const joinedNgos = [
+    { _id: 'ngo1', name: 'Helping Hands', tagline: 'Feeding the hungry' },
+    { _id: 'ngo2', name: 'Green Earth', tagline: 'Planting for a better future' }
+  ];
+  res.render('volunteer/dashboard', { volunteer: req.user, stats, upcoming, joinedNgos });
+});
 
-// Create Volunteer Profile
-module.exports.createVolunteerProfile = async (userId, volunteerProfile) => {
-    volunteerProfile.userId = userId;
-    const newVolunteerProfile = new VolunteerProfile(volunteerProfile);
-    const createdVolunteerProfile = await newVolunteerProfile.save();
-    return createdVolunteerProfile;
-}
+const getAssignedTasks = catchAsync(async (req, res) => {
+  const tasks = [
+    { _id: 't1', title: 'Distribute meal kits', ngoName: 'Helping Hands', dueDate: '2025-10-12', status: 'Pending', notes: 'Meet at main gate 9am' },
+    { _id: 't2', title: 'Assist at food camp', ngoName: 'Green Earth', dueDate: '2025-10-14', status: 'In Progress', notes: 'Bring gloves & mask' },
+    { _id: 't3', title: 'Pick-up donations', ngoName: 'Helping Hands', dueDate: '2025-10-18', status: 'Completed', notes: 'Warehouse #3' }
+  ];
+  res.render('volunteer/assigned-tasks', { volunteer: req.user, tasks });
+});
 
-// Render Dashboard Page
-module.exports.renderDashboardPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/dashboard', {
-        activePage: 'volunteer-dashboard',
-        pageTitle: 'Volunteer Dashboard | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
+const getJoinedNgos = catchAsync(async (req, res) => {
+  const joined = [
+    { _id: 'ngo1', name: 'Helping Hands', since: '2025-08-01', role: 'Volunteer' },
+    { _id: 'ngo2', name: 'Green Earth', since: '2025-09-10', role: 'Helper' }
+  ];
+  res.render('volunteer/joined-ngos', { volunteer: req.user, joined });
+});
 
-// Render Assigned Tasks Page
-module.exports.renderAssignedTasksPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/assigned-tasks', {
-        activePage: 'volunteer-assigned-tasks',
-        pageTitle: 'Assigned tasks | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
+const getNotifications = catchAsync(async (req, res) => {
+  const notifications = [
+    { title: 'Task updated', message: 'Your task “Assist at food camp” is now In Progress.', timeAgo: '1h' },
+    { title: 'Welcome!', message: 'Thanks for joining Green Earth.', timeAgo: '2d' }
+  ];
+  res.render('volunteer/notifications', { volunteer: req.user, notifications });
+});
 
-// Render Donation History Page
-module.exports.renderDonationHistoryPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/donation-history', {
-        activePage: 'volunteer-donation-history',
-        pageTitle: 'Donation history | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
+const getAccount = catchAsync(async (req, res) => {
+  res.render('volunteer/account', { volunteer: req.user });
+});
 
-// Render Notifications Page
-module.exports.renderNotificationsPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/notifications', {
-        activePage: 'volunteer-notifications',
-        pageTitle: 'Notifications | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
-
-// Render NGOs Page
-module.exports.renderNgosPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/ngos', {
-        activePage: 'volunteer-ngos',
-        pageTitle: 'Available NGOs | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
-
-// Render Joined NGOs Page
-module.exports.renderJoinedNgosPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/joined-ngos', {
-        activePage: 'volunteer-joined-ngos',
-        pageTitle: 'My NGOs | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
-
-// Render specific NGO details page
-module.exports.renderNgoDetailsPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/ngo-details', {
-        activePage: 'volunteer-ngo-details',
-        pageTitle: 'NGO details | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
-
-// Render Manage Account Page
-module.exports.renderManageAccountPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/account', {
-        activePage: 'volunteer-account',
-        pageTitle: 'Manage account | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
-
+module.exports = {
+  getDashboard,
+  getAssignedTasks,
+  getJoinedNgos,
+  getNotifications,
+  getAccount
+};

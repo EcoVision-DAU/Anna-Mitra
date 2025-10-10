@@ -1,0 +1,53 @@
+<div class="sidebar">
+  <div class="sidebar-main open" id="sidebar-volunteer">
+    <div class="sidebar-content">
+      <div class="sidebar-header d-flex align-items-center border-bottom border-secondary pb-3">
+        <button class="btn p-0 border-0 bg-transparent fs-4" id="toggle-volunteer" aria-controls="sidebar-volunteer" aria-label="Toggle sidebar">
+          <i class="bi bi-list px-1 mx-3"></i>
+        </button>
+        <div class="d-flex flex-column">
+          <h3 class="fs-5 mb-0" style="color: var(--am-darktheme-font);">AnnaMitra</h3>
+          <small class="text-secondary">Volunteer Panel</small>
+        </div>
+      </div>
+
+      <div class="sidebar-body pt-3">
+        <a href="/volunteer" class="d-flex align-items-center mb-1 <%= (active === 'dashboard') ? 'active' : '' %>">
+          <i class="bi bi-speedometer2 fs-5 px-1 mx-3"></i><span>Dashboard</span>
+        </a>
+
+        <a href="/volunteer/assigned-tasks" class="d-flex align-items-center mb-1 <%= (active === 'tasks') ? 'active' : '' %>">
+          <i class="bi bi-list-check fs-5 px-1 mx-3"></i><span>Assigned Tasks</span>
+        </a>
+
+        <a href="/volunteer/joined-ngos" class="d-flex align-items-center mb-1 <%= (active === 'joined') ? 'active' : '' %>">
+          <i class="bi bi-people fs-5 px-1 mx-3"></i><span>Joined NGOs</span>
+        </a>
+
+        <a href="/volunteer/notifications" class="d-flex align-items-center mb-1 <%= (active === 'notifications') ? 'active' : '' %>">
+          <i class="bi bi-bell fs-5 px-1 mx-3"></i><span>Notifications</span>
+        </a>
+
+        <a href="/volunteer/account" class="d-flex align-items-center mb-1 <%= (active === 'account') ? 'active' : '' %>">
+          <i class="bi bi-person fs-5 px-1 mx-3"></i><span>Account</span>
+        </a>
+
+        <hr class="border-secondary my-3">
+
+        <a href="/logout" class="d-flex align-items-center mb-1">
+          <i class="bi bi-box-arrow-right fs-5 px-1 mx-3"></i><span>Logout</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const sidebar = document.getElementById('sidebar-volunteer');
+  const toggle = document.getElementById('toggle-volunteer');
+  toggle?.addEventListener('click', () => {
+    sidebar.classList.toggle('close');
+  });
+})();
+</script>
