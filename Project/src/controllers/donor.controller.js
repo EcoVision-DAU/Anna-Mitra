@@ -11,3 +11,7 @@ module.exports.createDonorProfile = async (userId, donorProfile) => {
     const createdDonorProfile = await newDonorProfile.save();
     return createdDonorProfile; 
 }
+
+module.exports.viewDonorDashboard = catchAsync(async (req, res) => {
+    res.send("Welcome donor!");
+});

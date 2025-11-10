@@ -2,6 +2,7 @@
 const mongoos = require('mongoose');
 const User = require('../models/user.model');
 const VolunteerProfile = require('../models/volunteerprofile.model');
+const NGOProfile = require('../models/ngoprofile.model');
 const { volunteerProfileSchema } = require('../utils/joiSchemas');
 const safeRender = require('../utils/safeRender');
 const catchAsync = require('../utils/catchAsync');
@@ -57,11 +58,19 @@ module.exports.renderNotificationsPage = catchAsync(async (req, res, next) => {
 
 // Render NGOs Page
 module.exports.renderNgosPage = catchAsync(async (req, res, next) => {
+    if(!req.user) {
+        return res.status(401).json({ success: false, message: 'Unauthorized access' });
+    }
+    const volunteerId = req.user._id;
+    // Find NGOs where the volunteer is part of the volunteers array
+    const joinedNGOs = await NGOProfile.find({ volunteers: { $ne: volunteerId } });
+
     safeRender(res, 'volunteer/ngos', {
         activePage: 'volunteer-ngos',
         pageTitle: 'Available NGOs | AnnaMitra',
         messageType: null,
-        message: null
+        message: null,
+        joinedNGOs: joinedNGOs
     }, next);
 })
 
@@ -70,16 +79,6 @@ module.exports.renderJoinedNgosPage = catchAsync(async (req, res, next) => {
     safeRender(res, 'volunteer/joined-ngos', {
         activePage: 'volunteer-joined-ngos',
         pageTitle: 'My NGOs | AnnaMitra',
-        messageType: null,
-        message: null
-    }, next);
-})
-
-// Render specific NGO details page
-module.exports.renderNgoDetailsPage = catchAsync(async (req, res, next) => {
-    safeRender(res, 'volunteer/ngo-details', {
-        activePage: 'volunteer-ngo-details',
-        pageTitle: 'NGO details | AnnaMitra',
         messageType: null,
         message: null
     }, next);
@@ -94,4 +93,9 @@ module.exports.renderManageAccountPage = catchAsync(async (req, res, next) => {
         message: null
     }, next);
 })
+
+// Render Volunteer Profile Page
+module.exports.renderVolunteerProfilePage = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+});
 

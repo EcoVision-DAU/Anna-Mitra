@@ -21,6 +21,23 @@ document.addEventListener('DOMContentLoaded', (e) => {
 
 
 
+
+    //  ==========================  Forgot & reset password page JS  ============================
+
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    if (forgotPasswordForm) {
+        validateForgetResetForm(forgotPasswordForm);
+    }
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    if (resetPasswordForm) {
+        validateForgetResetForm(resetPasswordForm);
+    }
+
+
+
+
+
+
     //  ==========================  Donate page JS  ============================
 
     // Validate the donation form
@@ -455,6 +472,159 @@ function loginUser(form) {
         showAlert(alertTypes.Danger, 'An error occurred. Please try again later.');
     });
 }
+
+
+
+// Function to validate the forgot and reset password form
+function validateForgetResetForm(form) {
+    console.log('Form found:', form.id);
+
+    // Inputs
+    const email = form.querySelector('#email');
+    const password = form.querySelector('#password');
+    const cpassword = form.querySelector('#cpassword');
+
+    // Helper functions
+    const showError = (input, message) => {
+        const formGroup = input.parentElement;
+        input.classList.add('input-error');
+        const error = formGroup.querySelector('.error-message');
+        if (error) error.textContent = message;
+    };
+
+    const showSuccess = (input) => {
+        const formGroup = input.parentElement;
+        input.classList.remove('input-error');
+        const error = formGroup.querySelector('.error-message');
+        if (error) error.textContent = '';
+    };
+
+    const isEmailValid = (email) => {
+        const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        return re.test(String(email).toLowerCase());
+    };
+
+    const isPasswordSecure = (password) => {
+        const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
+        return re.test(password);
+    };
+
+    const validateForm = () => {
+        let isValid = true;
+
+        // Forgot Password form
+        if (email) {
+            if (email.value.trim() === '') {
+                showError(email, 'Email is required.');
+                isValid = false;
+            } else if (!isEmailValid(email.value.trim())) {
+                showError(email, 'Please enter a valid email address.');
+                isValid = false;
+            } else {
+                showSuccess(email);
+            }
+        }
+
+        // Reset Password form
+        if (password) {
+            if (password.value.trim() === '') {
+                showError(password, 'Password is required.');
+                isValid = false;
+            } else if (isPasswordSecure(password.value) === false) {
+                showError(password, 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.');
+                isValid = false;
+            } else {
+                showSuccess(password);
+            }
+        }
+
+        if (cpassword) {
+            if (cpassword.value.trim() === '') {
+                showError(cpassword, 'Please confirm your password.');
+                isValid = false;
+            } else if (password && cpassword.value.trim() !== password.value.trim()) {
+                showError(cpassword, 'Passwords do not match.');
+                isValid = false;
+            } else {
+                showSuccess(cpassword);
+            }
+        }
+
+        return isValid;
+    };
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!validateForm()) {
+            showAlert(alertTypes.Danger, 'Please fix the errors in the form before submitting.');
+        } else {
+            if (email) submitForgotPassword(form);
+            else submitResetPassword(form);
+        }
+    });
+
+    form.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', () => {
+            if (input.classList.contains('input-error')) {
+                validateForm();
+            }
+        });
+    });
+}
+
+function submitForgotPassword(form) {
+    const formData = new FormData(form);
+    // console.log(Object.fromEntries(formData.entries()));
+    fetch('/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))  
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(alertTypes.Success, data.message || 'Password reset link sent to your email.');
+            window.location.href = '/auth/login';
+        } else {
+            showAlert(alertTypes.Danger, data.message || 'Failed to send reset link. Please try again.');
+        }
+    })
+    .catch(err => {
+        console.error('Error during forgot password:', err);
+        showAlert(alertTypes.Danger, 'An error occurred. Please try again later.');
+    });
+}
+
+function submitResetPassword(form) {
+    const formData = new FormData(form);
+    // console.log(Object.fromEntries(formData.entries()));
+    let token = window.resetToken;
+    if (!token) {
+        showAlert(alertTypes.Danger, 'Invalid or missing token. Please try again.');
+        return;
+    }
+    fetch(`/auth/reset-password/${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))  
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(alertTypes.Success, data.message || 'Password has been reset successfully.');
+            setTimeout(() => {
+                window.location.href = '/auth/login';
+            }, 2000);
+        } else {
+            showAlert(alertTypes.Danger, data.message || 'Failed to reset password. Please try again.');
+        }
+    })
+    .catch(err => {
+        console.error('Error during reset password:', err);
+        showAlert(alertTypes.Danger, 'An error occurred. Please try again later.');
+    });
+}
+
 
 
 

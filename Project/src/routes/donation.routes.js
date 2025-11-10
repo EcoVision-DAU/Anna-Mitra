@@ -6,9 +6,6 @@ const donationController = require('../controllers/donation.controller');
 const donationMiddleware = require('../middlewares/donation.middleware');
 const { isLoggedIn, isDonor } = require('../middlewares/auth.middleware');
 
-// All routes here require user to be logged in and to be a donor
-// router.use(isLoggedIn, isDonor);
-
 // Multer setup for file uploads
 const storage = multer.diskStorage({
     destination: 'public/images/donations',
@@ -19,11 +16,17 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
+// All routes here require user to be logged in
+router.use(isLoggedIn);
+
+router.get('/', donationController.listDonations);
+
+// Only donors can create, edit, or delete donations
+router.use(isDonor);
+
 router.get('/new', donationController.renderDonationForm);
 
 router.post('/', upload.any(), donationMiddleware.validateDonationData, donationController.submitDonationForm);
-
-router.get('/', donationController.listDonations);
 
 router.get('/:id', donationController.viewDonationDetails);
 

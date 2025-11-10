@@ -1,0 +1,197 @@
+ok so below is the way i'm storing users with different user profiles:
+const mongoose = require('mongoose');
+const passportLocalMongoose = require("passport-local-mongoose");
+
+
+
+USER:-----
+
+const userSchema = new mongoose.Schema(
+    {
+        // Common Fields
+        email: { type: String, unique: true, required: true },
+        contact: { type: String, required: true },
+        role: {
+            type: String,
+            enum: ["Donor", "NGO", "Volunteer", "Admin", "Super Admin"],
+            required: true,
+        },
+    },
+    { timestamps: true }
+);
+
+// This will add username, hash, salt, and authentication methods to the schema
+userSchema.plugin(passportLocalMongoose, {
+    usernameField: "email",
+    errorMessages: {
+        UserExistsError: "A user with this email already exists."
+    }
+});
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
+
+
+
+DONORPROFILE:-----
+
+const mongoose = require('mongoose');
+
+const donorProfileSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
+    donorSourceName: { type: String, trim: true },
+    profilePicture: { type: String },
+    languagePreference: { type: String, default: "en" },
+    about: { type: String, maxlength: 1000 },
+    address: { type: String, maxlength: 300, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true },
+    pincode: { type: String, required: true },
+    donationHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "Donation" }],
+    feedbackReceived: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
+});
+
+const DonorProfile = mongoose.model("DonorProfile", donorProfileSchema);
+module.exports = DonorProfile;
+
+
+
+NGOPROFILE:-----
+
+const mongoose = require('mongoose');
+
+const ngoProfileSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    organizationName: { type: String, required: true, trim: true },
+    registrationNumber: { type: String, required: true, trim: true },
+    registeredUnder: { type: String, required: true, trim: true },
+    profilePicture: { type: String },
+    languagePreference: { type: String, default: "en" },
+    bannerPicture: { type: String },
+    website: { type: String },
+    address: { type: String, maxlength: 300, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true },
+    pincode: { type: String, required: true },
+    about: { type: String, required: true, maxlength: 1000 },
+    missionStatement: { type: String, maxlength: 500 },
+    visionStatement: { type: String, maxlength: 500 },
+    areasOfOperation: [{ type: String }], // e.g., ["Food Distribution", "Education", "Healthcare"]
+    documents: {
+        type: [String],
+        validate: {
+            validator: function (v) {
+                return Array.isArray(v) && v.length > 0;
+            },
+            message: 'Minimum one document item is required.'
+        }
+    }, // verification docs
+    volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    donationsHandled: [{ type: mongoose.Schema.Types.ObjectId, ref: "Donation" }],
+    financialDonations: [{ type: mongoose.Schema.Types.ObjectId, ref: "FinancialDonation" }],
+    bankDetails: {
+        accountNumber: { type: String },
+        ifscCode: { type: String },
+        upiId: { type: String },
+        isVisible: { type: Boolean, default: false },
+    },
+    ngoFeedbackReceived: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
+});
+
+const NGOProfile = mongoose.model("NGOProfile", ngoProfileSchema);
+module.exports = NGOProfile;
+
+
+
+
+VOLUNTEERPROFILE:-----
+
+const mongoose = require('mongoose');
+
+const volunteerProfileSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
+    profilePicture: { type: String },
+    languagePreference: { type: String, default: "en" },
+    isAvailable: { type: Boolean, default: true },
+    about: { type: String, maxlength: 1000 },
+    address: { type: String, maxlength: 300, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true },
+    pincode: { type: String, required: true },
+    joinedNGOs: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // NGOs this volunteer joined
+    participationHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "DonationTeam" }],
+});
+
+const VolunteerProfile = mongoose.model("VolunteerProfile", volunteerProfileSchema);
+module.exports = VolunteerProfile;
+
+
+
+
+now below are other 
+
+DONATIONREQUEST:-----
+
+const mongoose = require('mongoose');
+
+const donationRequestStatusOptions = [
+    "New", "Accepted", "Rejected", "Cancelled"
+];
+
+const donationRequestSchema = new mongoose.Schema({
+    donationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Donation', required: true },
+    donorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    ngoId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    requestDate: { type: Date, default: Date.now },
+    status: {
+        type: String,
+        enum: donationRequestStatusOptions,
+        required: true,
+        default: 'New'
+    },
+    message: { type: String, trim: true, maxlength: 500, required: true },
+    respondedAt: { type: Date }, // Changed from respondedDate to match controller
+    completedAt: { type: Date } // Add field for completion tracking
+}, {
+    timestamps: true // adds createdAt and updatedAt
+});
+
+donationRequestSchema.index({ donationId: 1, ngoId: 1 }, { unique: true });
+
+const DonationRequest = mongoose.model('DonationRequest', donationRequestSchema);
+module.exports = DonationRequest;
+
+
+
+
+DONATIONTEAM:------
+
+const mongoose = require('mongoose');
+
+const donationTeamSchema = new mongoose.Schema({
+    donationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Donation', required: true },
+    ngoId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    pickupSchedule: {
+        date: { type: Date, required: true },
+        time: { type: String, required: true }
+    },
+    deliverySchedule: {
+        date: { type: Date, required: false },
+        time: { type: String, required: false }
+    },
+    volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],
+    leaderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    completionProof: [{ type: String, required: true, default: [] }]
+}, {
+    timestamps: true // adds createdAt and updatedAt
+});
+
+const DonationTeam = mongoose.model('DonationTeam', donationTeamSchema);
+module.exports = DonationTeam;
+
+

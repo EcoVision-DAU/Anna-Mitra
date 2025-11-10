@@ -1,4 +1,7 @@
 const User = require('../models/user.model');
+const VolunteerProfile = require('../models/volunteerprofile.model');
+const DonorProfile = require('../models/donorprofile.model');
+const NGOProfile = require('../models/ngoprofile.model');
 const Donation = require('../models/donation.model');
 const catchAsync = require('../utils/catchAsync');
 const safeRender = require('../utils/safeRender');
@@ -6,7 +9,7 @@ const safeRender = require('../utils/safeRender');
 
 // Render home page
 module.exports.renderHomePage = (req, res, next) => {
-    safeRender(res, 'home', { 
+    safeRender(res, 'home', {
         activePage: 'home',
         pageTitle: 'Welcome to AnnaMitra',
         messageType: null,
@@ -16,17 +19,17 @@ module.exports.renderHomePage = (req, res, next) => {
 
 // Render about page
 module.exports.renderAboutPage = (req, res, next) => {
-    safeRender(res, 'about', { 
+    safeRender(res, 'about', {
         activePage: 'about',
         pageTitle: 'About | AnnaMitra',
         messageType: null,
-        message: null 
+        message: null
     }, next);
 }
 
 // Render contact page
 module.exports.renderContactPage = (req, res, next) => {
-    safeRender(res, 'contact', { 
+    safeRender(res, 'contact', {
         activePage: 'contact',
         pageTitle: 'Contact us now | AnnaMitra',
         messageType: null,
@@ -38,16 +41,20 @@ module.exports.testRoute = catchAsync(async (req, res) => {
     // throw new Error('testing error');
     try {
         // fetch donations sorted by date - newest first
-        const donations = await Donation.find({}).sort({ createdAt: -1 });
-        res.json(donations);
-
-
-        // const users = await User.find({role: 'Volunteer'}, {_id:1, firstName: 1});
-        // res.json(users);
-        // console.log(users);
-
-        // const donations = await Donation.find({});
+        // const donations = await Donation.find({}).sort({ createdAt: -1 });
         // res.json(donations);
+
+        const users = await User.find({role : 'Donor', createdAt: {$gte: new Date('2025-10-11')}}).sort({ createdAt: -1 });
+        let ud = [];
+        for(let user of users) {
+            const userprofile = await DonorProfile.findOne({userId: user._id});
+            ud.push({user, userprofile});
+        }
+        res.json(ud);
+
+
+        // const users = await User.find({role: 'Donor'}).sort({ createdAt: -1 });
+        // res.json(users);
     }
     catch (error) {
         console.error('Error in testRoute:', error.message);

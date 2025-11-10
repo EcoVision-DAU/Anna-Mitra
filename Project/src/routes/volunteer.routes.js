@@ -4,7 +4,10 @@ const volunteerController = require('../controllers/volunteer.controller');
 const { isLoggedIn, isVolunteer } = require('../middlewares/auth.middleware');
 
 // All routes here require user to be logged in and to be a volunteer
-router.use(isLoggedIn, isVolunteer);
+router.use(isLoggedIn);
+
+// All routes here require user to be a volunteer
+router.use(isVolunteer);
 
 // Dashboard Route
 router.get('/', volunteerController.renderDashboardPage);
@@ -23,9 +26,6 @@ router.get('/ngos', volunteerController.renderNgosPage);
 
 // Joined NGOs Route
 router.get('/joined-ngos', volunteerController.renderJoinedNgosPage);
-
-// Specific NGO Details Route
-router.get('/ngos/:id', volunteerController.renderNgoDetailsPage);
 
 // Manage Account Route
 router.get('/account', volunteerController.renderManageAccountPage);

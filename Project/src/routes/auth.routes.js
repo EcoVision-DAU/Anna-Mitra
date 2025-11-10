@@ -35,5 +35,14 @@ router.post('/register', upload.any(), authMiddleware.validateRegistrationData, 
 // Route for the forgot password page
 router.get('/forgot-password', authController.renderForgotPasswordPage);
 
+// Handle forgot password form submission
+router.post('/forgot-password', authController.handleForgotPassword);
+
+// Route for the reset password page
+router.get('/reset-password/:token', authController.renderResetPasswordPage);
+
+// Handle reset password form submission
+router.post('/reset-password/:token', authController.handleResetPassword);
+
 
 module.exports = router;

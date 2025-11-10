@@ -73,7 +73,12 @@ module.exports.renderManageAccountPage = catchAsync(async (req, res) => {
 })
 
 // Render Ngo Profile Page
-module.exports.renderNgoProfilePage = catchAsync(async (req, res) => {
-    res.send('NGO');
+module.exports.renderNgoProfilePage = catchAsync(async (req, res, next) => {
+    safeRender(res, 'ngo/profile', {
+        activePage: 'ngo-profile',
+        pageTitle: 'NGO Profile | AnnaMitra',
+        messageType: null,
+        message: null
+    }, next);
 })
 
