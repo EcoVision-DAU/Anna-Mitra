@@ -51,6 +51,17 @@ module.exports.renderForgotPasswordPage = (req, res, next) => {
     }, next);
 }
 
+// Render reset password page
+module.exports.renderResetPasswordPage = (req, res, next) => {
+    return safeRender(res, 'reset-password', {
+        activePage: 'reset-password',
+        pageTitle: 'Reset password | AnnaMitra',
+        messageType: null,
+        message: null,
+        token: req.params.token
+    }, next);
+};
+
 // Handle user login
 module.exports.loginUser = (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
@@ -77,87 +88,6 @@ module.exports.loginUser = (req, res, next) => {
 }
 
 // Handle user registration
-// module.exports.registerUser = catchAsync(async (req, res) => {
-
-//     const {
-//         'first-name': firstName,
-//         'last-name': lastName,
-//         email,
-//         contact,
-//         'account-type': accountType,
-//         address,
-//         password
-//     } = req.body;
-
-//     const formData = {
-//         firstName,
-//         lastName,
-//         email,
-//         contact,
-//         accountType,
-//         address
-//     };
-
-//     if (!firstName || !lastName || !email || !accountType || !password) {
-//         return safeRender(res, 'register', {
-//             activePage: 'register',
-//             pageTitle: 'Register now | AnnaMitra',
-//             formData,
-//             messageType: 'danger',
-//             message: "All required fields must be filled."
-//         }, next);
-//     }
-
-//     if(mongoose.connection.readyState !== 1) {
-//         console.error('Database connection is not ready');
-//         return safeRender(res, 'register', {
-//             activePage: 'register',
-//             pageTitle: 'Register now | AnnaMitra',
-//             formData,
-//             messageType: 'danger',
-//             message: "Database connection error. Please try again later."
-//         }, next);
-//     }
-
-//     console.log('POST register', formData);
-//     try {
-//         const existingUser = await User.findOne({ email });
-//         if (existingUser) {
-//             return safeRender(res, 'register', {
-//                 activePage: 'register',
-//                 pageTitle: 'Register now | AnnaMitra',
-//                 formData,
-//                 messageType: 'danger',
-//                 errorMessage: "Email already registered."
-//             }, next);
-//         }
-
-//         const salt = await bcrypt.genSalt(10);
-//         const passwordHash = await bcrypt.hash(password, salt);
-//         const user = new User({
-//             firstName,
-//             lastName,
-//             email,
-//             contact,
-//             role: accountType,
-//             address,
-//             passwordHash
-//         });
-//         await user.save();
-//         console.log('User registered successfully');
-//         res.redirect('/auth/login');
-//     } catch (error) {
-//         console.error('Error registering user:', error.message);
-//         safeRender(res, 'register', {
-//             activePage: 'register',
-//             pageTitle: 'Register now | AnnaMitra',
-//             formData,
-//             messageType: 'danger',
-//             errorMessage : error.message
-//         }, next);
-//     }
-// })
-
 module.exports.registerUser = async (req, res, next) => {
     try {
         const { user } = req.body;
@@ -189,5 +119,56 @@ module.exports.logoutUser = (req, res) => {
     res.redirect('/');
 }
 
+// Handle forgot password
+module.exports.handleForgotPassword = catchAsync(async (req, res, next) => {
+    console.log('Forgot password request body:', req.body);
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) {
+        return res.status(400).json({ success: false, message: 'No account with that email address exists.' });
+    }
 
+    return res.status(400).json({ success: false, message: 'Forgot password functionality is not yet implemented.' });
 
+    // Generate a reset token and its expiration
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour from now
+    await user.save();
+
+    // Send email with the reset link (pseudo-code, implement actual email sending)
+    const resetLink = `http://${req.headers.host}/auth/reset-password/${token}`;
+    console.log(`Password reset link (send this via email): ${resetLink}`);
+});
+
+// Handle reset password
+module.exports.handleResetPassword = catchAsync(async (req, res, next) => {
+    console.log('Reset password request body:', req.body);
+    const { token } = req.params;
+    const { password, cpassword } = req.body;
+
+    // check password is "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.' });
+    }
+    if (password !== cpassword) {
+        return res.status(400).json({ success: false, message: 'Passwords do not match.' });
+    }
+
+    const user = await User.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpires: { $gt: Date.now() } // token is not expired
+    });
+
+    if (!user) {
+        return res.status(400).json({ success: false, message: 'Password reset token is invalid or has expired.' });
+    }
+
+    // Update the user's password
+    await user.setPassword(password);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+});

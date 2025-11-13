@@ -44,7 +44,7 @@ const foodItemSchema = Joi.object({
     cookedDate: Joi.date().required(),
     cookedTime: Joi.string().required(),
     itemImages: Joi.array().items(Joi.string()).min(1).max(3).required()
-});
+}).unknown(true);
 
 // Main donation schema
 module.exports.donationSchema = Joi.object({
@@ -75,8 +75,7 @@ module.exports.donationSchema = Joi.object({
         contact: Joi.string().pattern(/^\d{10}$/).required(),
         email: Joi.string().email().required(),
         personName: Joi.string().required(),
-        assignedNgoId: Joi.string()
-            .custom((value, helpers) => {
+        assignedNgoId: Joi.custom((value, helpers) => {
                 if (!mongoose.Types.ObjectId.isValid(value)) {
                     return helpers.error("any.invalid");
                 }
@@ -105,7 +104,9 @@ module.exports.userSchema = Joi.object({
         // password min 8 chars, one lowercase, one uppercase, one number, one special char
         password: Joi.string().pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$')).required(),
         contact: Joi.string().pattern(/^\d{10}$/).required(),
-        role: Joi.string().valid(...userRoleOptions).required()
+        role: Joi.string().valid(...userRoleOptions).required(),
+        resetPasswordToken: Joi.string().optional(),
+        resetPasswordExpires: Joi.date().optional()
     }).unknown(true).required()
 }).unknown(true);
 

@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const morgan = require('morgan');
 const session = require('express-session');
-const passpord = require('passport');
+const passport = require('passport');
 const LocalStrategy = require('passport-local');
 
 // Import custom modules
@@ -81,12 +81,12 @@ const sessionConfig = {
 app.use(session(sessionConfig));
 
 // Passport configuration
-app.use(passpord.initialize());
-app.use(passpord.session());
-passpord.use(new LocalStrategy({ usernameField: "email" }, User.authenticate()));
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy({ usernameField: "email" }, User.authenticate()));
 
-passpord.serializeUser(User.serializeUser());
-passpord.deserializeUser(User.deserializeUser());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 // Middleware to pass current user to all templates
 app.use((req, res, next) => {

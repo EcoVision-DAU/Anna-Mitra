@@ -3,8 +3,14 @@ const router = express.Router();
 const ngoController = require('../controllers/ngo.controller');
 const { isLoggedIn, isNGO } = require('../middlewares/auth.middleware');
 
-// All routes here require user to be logged in and to be a ngo
-router.use(isLoggedIn, isNGO);
+// All routes here require user to be logged in 
+router.use(isLoggedIn);
+
+// View Ngo Profile Route
+router.get('/:id', ngoController.renderNgoProfilePage);
+
+// All routes here require user to be an NGO
+router.use(isNGO);
 
 // Dashboard Route
 router.get('/', ngoController.renderDashboardPage);
@@ -24,7 +30,5 @@ router.get('/notifications', ngoController.renderNotificationsPage);
 // Manage Account Route
 router.get('/account', ngoController.renderManageAccountPage);
 
-// View Ngo Profile Route
-router.get('/:id', ngoController.renderNgoProfilePage);
 
 module.exports = router;

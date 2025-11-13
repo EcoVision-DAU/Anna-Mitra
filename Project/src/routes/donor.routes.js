@@ -6,4 +6,6 @@ const { isLoggedIn, isDonor } = require('../middlewares/auth.middleware');
 // All routes here require user to be logged in and to be a donor
 router.use(isLoggedIn, isDonor);
 
+router.get('/', donorController.viewDonorDashboard);
+
 module.exports = router;

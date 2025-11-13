@@ -38,7 +38,7 @@ td, th {
     width: fit-content;
 }
 
-.nav-item a::after {
+.nav-item a.nav-link:not(.dropdown-toggle)::after {
     content: "";
     display: block;
     height: 3px;
@@ -48,12 +48,19 @@ td, th {
     margin: 0 auto;
 }
 
-.nav-item a:hover::after {
+.nav-item a.nav-link:not(.dropdown-toggle):hover::after {
     width: 100%;
 }
 
-.nav-item a.current::after {
+.nav-item a.nav-link:not(.dropdown-toggle).current::after {
     width: 100%;
+}
+
+.nav-item.dropdown {
+  list-style: none;
+}
+.nav-item.dropdown::marker {
+  content: none;
 }
 
 .offcanvas .offcanvas-header {
