@@ -5,7 +5,7 @@ const userController = require('../controllers/user.controller');
 module.exports.validateDonationData = async (req, res, next) => {
     console.log("Validating donation data...");
     try {
-        const donorId = await userController.findOneUserId('Donor');
+        const donorId = req.user._id;
         let donation, oldImages = [];
         if(req.method === 'PUT' && req.params.id) {
             const result = constructDonationData(req.body, req.files, donorId, res, req.params.id);

@@ -197,6 +197,7 @@ module.exports.deleteDonation = catchAsync(async (req, res) => {
     }
 
     try {
+        console.log('Deleting donation with ID:', donationId);
         const donation = await Donation.findByIdAndDelete(donationId);
         if (!donation) {
             return res.status(404).json({ success: false, message: 'Donation not found.' });

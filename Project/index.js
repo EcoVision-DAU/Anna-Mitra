@@ -25,7 +25,6 @@ const donationRoutes = require('./src/routes/donation.routes');
 const donorRoutes = require('./src/routes/donor.routes');
 const ngoRoutes = require('./src/routes/ngo.routes');
 const volunteerRoutes = require('./src/routes/volunteer.routes');
-const adminRoutes = require('./src/routes/admin.routes');
 
 
 
@@ -106,7 +105,6 @@ app.use('/donations', donationRoutes);
 app.use('/donor', donorRoutes);
 app.use('/ngo', ngoRoutes);
 app.use('/volunteer', volunteerRoutes);
-app.use('/admin', adminRoutes);
 
 app.all(/(.*)/, (req, res, next) => {
     res.status(404).render('404', {
@@ -134,7 +132,7 @@ app.use((err, req, res, next) => {
 })
 
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 

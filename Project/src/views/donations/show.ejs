@@ -23,31 +23,43 @@
             </button>
             <div class="d-flex gap-2 flex-wrap">
                 <% if (donation.status === 'Assigned' && donation.assignedNgoId) { %>
-                    <a href="/ngo/<%= donation.assignedNgoId %>" class="btn btn-outline-primary me-2">
-                        View Assigned NGO
-                    </a>
-                    <button type="button" class="btn btn-outline-success me-2" onclick="markAsPickedUp()">
-                        Mark as Picked Up
-                    </button>
-                    <button type="button" class="btn btn-outline-danger" onclick="cancelDonationPickup()">
-                        Cancel Pickup
+                    <% if(user.role === 'Donor') { %>
+                        <a href="/ngo/<%= donation.assignedNgoId %>" class="btn btn-outline-primary me-2">
+                            View Assigned NGO
+                        </a>
+                    <% } %>
+                    <% if(user.role === 'NGO' && donation.status === 'Scheduled') { %>
+                        <button type="button" class="btn btn-outline-success me-2" onclick="markAsPickedUp()">
+                            Mark as Picked Up
+                        </button>
+                    <% } %>
+                    <% if(user.role === 'NGO' || user.role === 'Donor') { %>
+                        <button type="button" class="btn btn-outline-danger" onclick="cancelDonationPickup()">
+                            Cancel Pickup
+                        </button>
+                    <% } %>
+                <% } %>
+
+                <% if(user.role === 'NGO') { %>
+                    <button type="button" class="btn btn-outline-warning" id="requestPickupBtn" data-bs-toggle="modal" data-bs-target="#requestDonationModal">
+                        <i class="fas fa-plus me-1"></i>Request Pickup
                     </button>
                 <% } %>
-                <button type="button" class="btn btn-outline-warning" id="requestPickupBtn" data-bs-toggle="modal" data-bs-target="#requestDonationModal">
-                    <i class="fas fa-plus me-1"></i>Request Pickup
-                </button>
-                <a href="/donations/<%= donation._id %>/edit">
-                    <button type="button" class="btn btn-outline-warning">
-                        <i class="fas fa-edit me-1"></i>Edit Donation
-                    </button>
-                </a>
-                <a href="#donationRequests" style="text-decoration: none;">
-                    <button
-                        class="btn btn-hover-secondary-subtle d-flex align-items-center gap-2 text-dark border border-secondary-subtle font-weight-bold"
-                        style="font-weight: 500;">
-                        <i class="bi bi-plus"></i>Pickup Requests
-                    </button>
-                </a>
+
+                <% if(user.role === 'Donor') { %>
+                    <a href="/donations/<%= donation._id %>/edit">
+                        <button type="button" class="btn btn-outline-warning">
+                            <i class="fas fa-edit me-1"></i>Edit Donation
+                        </button>
+                    </a>
+                    <a href="#donationRequests" style="text-decoration: none;">
+                        <button
+                            class="btn btn-hover-secondary-subtle d-flex align-items-center gap-2 text-dark border border-secondary-subtle font-weight-bold"
+                            style="font-weight: 500;">
+                            <i class="bi bi-plus"></i>Pickup Requests
+                        </button>
+                    </a>
+                <% } %>
             </div>
         </div>
 
@@ -294,7 +306,7 @@
         </div>
 
         <!-- Pickup Requests from NGOs -->
-        <% if(donation.status === 'New') { %>
+        <% if(user.role === 'Donor' && donation.status === 'New') { %>
             <div class="card mb-4 p-4" id="donationRequests">
                 <div class="card-header p-0 mb-4">
                     <h3 class="fs-5 mb-1">Pickup Requests from NGOs</h3>

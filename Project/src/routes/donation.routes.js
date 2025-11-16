@@ -21,14 +21,15 @@ router.use(isLoggedIn);
 
 router.get('/', donationController.listDonations);
 
+router.get('/:id', donationController.viewDonationDetails);
+
 // Only donors can create, edit, or delete donations
+
 router.use(isDonor);
 
 router.get('/new', donationController.renderDonationForm);
 
 router.post('/', upload.any(), donationMiddleware.validateDonationData, donationController.submitDonationForm);
-
-router.get('/:id', donationController.viewDonationDetails);
 
 router.get('/:id/edit', donationController.renderEditDonationForm);
 

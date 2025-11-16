@@ -6,6 +6,38 @@ document.addEventListener('DOMContentLoaded', (e) => {
 
     console.log('listeners loaded');
 
+    //  ==========================  Common JS  ============================
+
+    const notificationToggle = document.getElementById('notificationsToggler');
+    if (notificationToggle) {
+        // turn on notification if input is checked otherwise turn off 
+        notificationToggle.addEventListener('change', function (event) {
+            const isEnabled = event.target.checked;
+            fetch('/donor/toggle-notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ enabled: isEnabled })
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success) {
+                    showAlert(alertTypes.Success, `Notifications ${isEnabled ? 'enabled' : 'disabled'} successfully.`);
+                } else {
+                    showAlert(alertTypes.Danger, `Failed to ${isEnabled ? 'enable' : 'disable'} notifications. Please try again.`);
+                    notificationToggle.checked = !isEnabled; // revert toggle state
+                }
+            })
+            .catch((err) => {
+                showAlert(alertTypes.Danger, `An error occurred. Please try again.`);
+                notificationToggle.checked = !isEnabled; // revert toggle state
+            });
+        });
+    }
+
+
+
     //  ==========================  Login page JS  ============================
 
     
@@ -46,7 +78,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
                 handleOpenEditFoodItemModal(event);
             }
             if (event.target.classList.contains('hover-blue')) {
-                handleOpenImagesModal(event);
+                handleOpenImagesModal(event, 'item-table');
             }
         });
     }
@@ -117,11 +149,20 @@ document.addEventListener('DOMContentLoaded', (e) => {
 
 
     //  ==========================  All Donations page JS  ============================
+
     const searchTitleDesc = document.getElementById('searchTitleDesc');
     if (searchTitleDesc) {
         console.log('search filters initialized');
         setDonationFilters();
     }
+
+
+
+
+
+    //  ==========================  Donor dashboard page JS  ============================
+
+
 
 });
 
@@ -246,14 +287,18 @@ function handleOpenEditFoodItemModal(event) {
 }
 
 // Function to open the image modal and display images
-function handleOpenImagesModal(event) {
+function handleOpenImagesModal(event, tableType) {
     const nextImageBtn = document.getElementById('nextImage');
     const prevImageBtn = document.getElementById('prevImage');
     const viewerImage = document.getElementById('viewerImage');
     let ind = event.target.closest('tr').rowIndex - 1;
 
-
-    imagesModalURLs = foodItems[ind]['itemImages'];
+    if (tableType === 'donation-table') {
+        imagesModalURLs = donationItems[ind]['images'];
+    }
+    else {
+        imagesModalURLs = foodItems[ind]['itemImages'];
+    }
     imagesModalIndex = 0;
     viewerImage.src = imagesModalURLs[imagesModalIndex];
     if (imagesModalURLs.length === 1) {

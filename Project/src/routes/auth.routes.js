@@ -18,6 +18,10 @@ const upload = multer({ storage });
 // Route for logout
 router.get('/logout', authMiddleware.isLoggedIn, authController.logoutUser);
 
+// Handle change password form submission from accout page
+router.post('/change-password', authMiddleware.isLoggedIn, authController.handleChangePassword);
+
+
 router.use(authMiddleware.isLoggedOut);
 
 // Route for the login page

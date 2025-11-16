@@ -116,7 +116,13 @@ module.exports.registerUser = async (req, res, next) => {
 
 // Handle logout
 module.exports.logoutUser = (req, res) => {
-    res.redirect('/');
+    req.logout(err => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: 'Error logging out.' });
+        }
+        res.status(200).json({ success: true, message: 'Logged out successfully.' });
+    });
 }
 
 // Handle forgot password
@@ -171,4 +177,31 @@ module.exports.handleResetPassword = catchAsync(async (req, res, next) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+});
+
+// Handle change password 
+module.exports.handleChangePassword = catchAsync(async (req, res, next) => {
+    console.log('Change password request body:', req.body);
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+    const user = req.user;
+    if (!user) {
+        return res.status(401).json({ success: false, message: 'User not authenticated.' });
+    }
+    // Verify current password
+    const isMatch = await user.authenticate(currentPassword);
+    if (!isMatch) {
+        return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+    }
+    // Validate new password
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+        return res.status(400).json({ success: false, message: 'New password must be at least 8 characters long and include uppercase, lowercase, number, and special character.' });
+    }
+    if (newPassword !== confirmNewPassword) {
+        return res.status(400).json({ success: false, message: 'New passwords do not match.' });
+    }
+    // Update password
+    await user.setPassword(newPassword);
+    await user.save();
+    return res.status(200).json({ success: true, message: 'Password changed successfully.' });
 });
