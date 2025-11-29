@@ -7,7 +7,7 @@
                 </div>
                 <div>
                     <h3 class="fs-4 mb-2" style="color: var(--am-darktheme-font);">AnnaMitra</h3>
-                    <p class="mb-2" style="font-size: 0.9rem;">NGO Panel</p>
+                    <p class="mb-2" style="font-size: 0.9rem;"><%= user.role %> Panel</p>
                 </div>
             </div>
             <div class="sidebar-body pt-3">
@@ -23,23 +23,61 @@
                         class="bi bi-bell-fill fs-5 px-1 mx-3"></i>Notifications</a>
                 <a href="/ngo/account" class="d-flex align-items-center mb-1"><i
                     class="bi bi-person-gear fs-5 px-1 mx-3"></i>Manage Account</a> -->
+                <% if(user.role == 'Volunteer') { %>
 
-                <a href="/volunteer/" class="d-flex align-items-center mb-1 active"><i 
-                        class="bi bi-bar-chart-fill fs-5 px-1 mx-3"></i>Dashboard</a>
-                <a href="/volunteer/assigned-tasks" class="d-flex align-items-center mb-1"><i 
-                        class="bi bi-journal-text fs-5 px-1 mx-3"></i>My Assignments</a>
-                <a href="/volunteer/donation-history" class="d-flex align-items-center mb-1"><i 
-                        class="bi bi-clock-history fs-5 px-1 mx-3"></i>Donations History</a>
-                <a href="/volunteer/notifications" class="d-flex align-items-center mb-1"><i 
-                        class="bi bi-bell-fill fs-5 px-1 mx-3"></i>Notifications</a>
-                <a href="/volunteer/ngos" class="d-flex align-items-center mb-1"><i 
-                        class="bi bi-people-fill fs-5 px-1 mx-3"></i>NGOs</a>
-                <a href="/volunteer/joined-ngos" class="d-flex align-items-center mb-1"><i 
-                    class="bi bi-people-fill fs-5 px-1 mx-3"></i>Joined NGOs</a>
-                <a href="/volunteer/account" class="d-flex align-items-center mb-1"><i 
-                        class="bi bi-person-gear fs-5 px-1 mx-3"></i>Manage Account</a>
+                    <a href="/volunteer/" class="d-flex align-items-center mb-1 active"><i 
+                            class="bi bi-bar-chart-fill fs-5 px-1 mx-3"></i>Dashboard</a>
+                    <a href="/volunteer/assigned-tasks" class="d-flex align-items-center mb-1"><i 
+                            class="bi bi-journal-text fs-5 px-1 mx-3"></i>My Assignments</a>
+                    <a href="/volunteer/donation-history" class="d-flex align-items-center mb-1"><i 
+                            class="bi bi-clock-history fs-5 px-1 mx-3"></i>Donations History</a>
+                    <a href="/volunteer/notifications" class="d-flex align-items-center mb-1"><i 
+                            class="bi bi-bell-fill fs-5 px-1 mx-3"></i>Notifications</a>
+                    <a href="/volunteer/ngos" class="d-flex align-items-center mb-1"><i 
+                            class="bi bi-people-fill fs-5 px-1 mx-3"></i>NGOs</a>
+                    <a href="/volunteer/joined-ngos" class="d-flex align-items-center mb-1"><i 
+                        class="bi bi-people-fill fs-5 px-1 mx-3"></i>Joined NGOs</a>
+                    <a href="/volunteer/account" class="d-flex align-items-center mb-1"><i 
+                            class="bi bi-person-gear fs-5 px-1 mx-3"></i>Manage Account</a>
+                
+                <% } else if(user.role == 'NGO') { %>
 
-                <a href="" class="d-flex align-items-center mb-1"><i
+                    <a href="/ngo/" class="d-flex align-items-center mb-1 active"><i
+                            class="bi bi-bar-chart-fill fs-5 px-1 mx-3"></i>Dashboard</a>
+                    <a href="/ngo/my-donations" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-box-seam-fill fs-5 px-1 mx-3"></i>My Donations</a>
+                    <a href="/ngo/staff" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-people-fill fs-5 px-1 mx-3"></i>Staff</a>
+                    <a href="/ngo/joining-requests" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-plus-lg fs-5 px-1 mx-3"></i>Requests</a>
+                    <a href="/ngo/notifications" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-bell-fill fs-5 px-1 mx-3"></i>Notifications</a>
+                    <a href="/ngo/account" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-person-gear fs-5 px-1 mx-3"></i>Manage Account</a>
+
+                <% } else if(user.role == 'Admin') { %>
+
+                    <a href="" class="d-flex align-items-center mb-1 active"><i
+                            class="bi bi-bar-chart-fill fs-5 px-1 mx-3"></i>Dashboard</a>
+                    <a href="" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-box-seam-fill fs-5 px-1 mx-3"></i>Donations</a>
+                    <a href="" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-envelope-arrow-down-fill fs-5 px-1 mx-3"></i>Inquiries</a>
+                    <a href="" class="d-flex align-items-center mb-1"><i
+                            class="fas fa-hand-holding-heart fs-5 px-1 mx-3"></i>Donors</a>
+                    <a href="" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-people-fill fs-5 px-1 mx-3"></i>NGOs</a>
+                    <a href="" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-person-fill fs-5 px-1 mx-3"></i>Volunteers</a>
+                    <a href="" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-person-circle fs-5 px-1 mx-3"></i>Admins</a>
+                    <a href="" class="d-flex align-items-center mb-1"><i
+                            class="bi bi-person-gear fs-5 px-1 mx-3"></i>Manage Account</a>
+
+                <% } %>
+                
+
+                <a href="" class="d-flex align-items-center mb-1" onclick="logoutUser()"><i
                         class="fas fa-sign-out-alt fs-5 px-1 mx-3"></i>Log Out</a>
             </div>
         </div>
