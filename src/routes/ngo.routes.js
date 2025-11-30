@@ -7,7 +7,7 @@ const ngoMiddleware = require('../middlewares/ngo.middleware');
 const { isLoggedIn, isNGO, isVolunteer } = require('../middlewares/auth.middleware');
 
 // ⭐ Use Cloudinary storage instead of disk storage
-const { storage } = require('../config/cloudinary.config');
+const { storage } = require('../config/cloudinary');
 const upload = multer({ storage });
 
 // All routes here require user to be logged in 

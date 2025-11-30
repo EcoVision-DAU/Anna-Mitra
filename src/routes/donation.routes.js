@@ -3,7 +3,8 @@ const multer = require('multer');
 const router = express.Router();
 
 // 1. **IMPORT CLOUDINARY STORAGE (NEW)**
-const { storage } = require('../config/cloudinary'); 
+// const { storage } = require('../config/cloudinary'); 
+const { storage } = require('../config/cloudinary');
 const upload = multer({ storage });
 
 const donationController = require('../controllers/donation.controller');

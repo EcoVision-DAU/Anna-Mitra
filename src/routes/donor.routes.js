@@ -6,7 +6,7 @@ const donorMiddleware = require('../middlewares/donor.middleware');
 const { isLoggedIn, isDonor } = require('../middlewares/auth.middleware');
 
 // ⭐ Use Cloudinary storage instead of disk storage
-const { storage } = require('../config/cloudinary.config');
+const { storage } = require('../config/cloudinary'); 
 const upload = multer({ storage });
 
 // All routes require the user to be logged in + be a donor

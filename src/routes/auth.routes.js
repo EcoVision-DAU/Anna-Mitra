@@ -7,7 +7,7 @@ const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
 // ⭐ Use Cloudinary storage instead of disk storage
-const { storage } = require('../config/cloudinary.config');
+const { storage } = require('../config/cloudinary');
 
 // ⭐ Multer using Cloudinary works on Vercel
 const upload = multer({ storage });
