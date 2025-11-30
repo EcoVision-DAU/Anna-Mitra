@@ -6,47 +6,55 @@ const { v4: uuidv4 } = require('uuid');
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
-const storage = multer.diskStorage({
-    destination: 'public/documents/ngos',
-    filename: (req, file, cb) => {
-        cb(null, file.fieldname + '-' + uuidv4() + '.' + file.originalname.split('.').pop());
-    }
-});
+// ⭐ Use Cloudinary storage instead of disk storage
+const { storage } = require('../config/cloudinary.config');
+
+// ⭐ Multer using Cloudinary works on Vercel
 const upload = multer({ storage });
 
+// ---------------- ROUTES ----------------
 
-// Route for logout
+// Logout
 router.get('/logout', authMiddleware.isLoggedIn, authController.logoutUser);
 
-// Handle change password form submission from accout page
+// Change password
 router.post('/change-password', authMiddleware.isLoggedIn, authController.handleChangePassword);
 
-
+// Only logged-out users can access login/register
 router.use(authMiddleware.isLoggedOut);
 
-// Route for the login page
+// Login page
 router.get('/login', authController.renderLoginPage);
 
-// Handle login form submission
-router.post('/login', passport.authenticate('local', { failureRedirect: '/auth/login', failureMessage: true }), authController.loginUser);
+// Login submit
+router.post('/login',
+    passport.authenticate('local', {
+        failureRedirect: '/auth/login',
+        failureMessage: true
+    }),
+    authController.loginUser
+);
 
-// Route for the register page
+// Register page
 router.get('/register', authController.renderRegisterPage);
 
-// Handle register form submission
-router.post('/register', upload.any(), authMiddleware.validateRegistrationData, authController.registerUser);
+// ⭐ Registration with Cloudinary uploads
+router.post('/register',
+    upload.any(),
+    authMiddleware.validateRegistrationData,
+    authController.registerUser
+);
 
-// Route for the forgot password page
+// Forgot password
 router.get('/forgot-password', authController.renderForgotPasswordPage);
 
-// Handle forgot password form submission
+// Forgot password submit
 router.post('/forgot-password', authController.handleForgotPassword);
 
-// Route for the reset password page
+// Reset password page
 router.get('/reset-password/:token', authController.renderResetPasswordPage);
 
-// Handle reset password form submission
+// Reset password submit
 router.post('/reset-password/:token', authController.handleResetPassword);
-
 
 module.exports = router;
