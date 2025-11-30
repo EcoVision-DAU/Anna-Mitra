@@ -6,59 +6,8 @@ const ngoController = require('../controllers/ngo.controller');
 const ngoMiddleware = require('../middlewares/ngo.middleware');
 const { isLoggedIn, isNGO, isVolunteer } = require('../middlewares/auth.middleware');
 
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         if (file.fieldname === 'profileImage' || file.fieldname === 'bannerImage') {
-//             cb(null, 'public/images/ngos');
-//         } else if (file.fieldname === 'documents') {
-//             cb(null, 'public/donations/ngos');
-//         } else {
-//             cb(null, 'public/uploads'); // fallback
-//         }
-//     },
-//     filename: (req, file, cb) => {
-//         cb(
-//             null,
-//             file.fieldname + '-' + uuidv4() + '.' + file.originalname.split('.').pop()
-//         );
-//     }
-// });
-
-const fs = require('fs');
-const path = require('path');
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-
-        // ✅ THIS IS THE PROJECT ROOT (where package.json exists)
-        const ROOT_PUBLIC = path.join(process.cwd(), 'public');
-
-        let uploadPath;
-
-        if (file.fieldname === 'profileImage' || file.fieldname === 'bannerImage') {
-            uploadPath = path.join(ROOT_PUBLIC, 'images', 'ngos');
-        } 
-        else if (file.fieldname === 'documents') {
-            uploadPath = path.join(ROOT_PUBLIC, 'donations', 'ngos');
-        }
-
-        // ✅ AUTO-CREATE THE REAL FOLDERS
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-
-        cb(null, uploadPath);
-    },
-
-    filename: (req, file, cb) => {
-        cb(
-            null,
-            file.fieldname + '-' + uuidv4() + '.' + file.originalname.split('.').pop()
-        );
-    }
-});
-
-
+// ⭐ Use Cloudinary storage instead of disk storage
+const { storage } = require('../config/cloudinary.config');
 const upload = multer({ storage });
 
 // All routes here require user to be logged in 
@@ -88,26 +37,27 @@ router.get('/notifications', isNGO, ngoController.renderNotificationsPage);
 // Manage Account Route
 router.get('/account', isNGO, ngoController.renderManageAccountPage);
 
-// Update Account Details
-router.put('/account', 
+// Update Account Details (Profile image, banner image, documents)
+router.put(
+    '/account',
     isNGO,
     upload.fields([
         { name: 'profileImage', maxCount: 1 },
         { name: 'bannerImage', maxCount: 1 },
         { name: 'documents', maxCount: 10 }
-    ]), 
-    ngoMiddleware.constructProfileData, 
-    ngoMiddleware.validateProfileData, 
-    ngoController.handleUpdateAccount);
+    ]),
+    ngoMiddleware.constructProfileData,
+    ngoMiddleware.validateProfileData,
+    ngoController.handleUpdateAccount
+);
 
-// View Ngo Profile Route
+// View NGO Profile
 router.get('/:id', ngoController.renderNgoProfilePage);
 
-// Handle Volunteer Request Route
+// Handle Volunteer Join Request
 router.post('/:id/request-join', isVolunteer, ngoController.handleVolunteerRequest);
 
 // Remove volunteer from NGO
 router.delete('/:id/volunteers/:volunteerId', isNGO, ngoController.removeVolunteerFromNGO);
-
 
 module.exports = router;

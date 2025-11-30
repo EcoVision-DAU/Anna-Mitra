@@ -1,28 +1,32 @@
 const express = require('express');
 const multer = require('multer');
-const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const donorController = require('../controllers/donor.controller');
 const donorMiddleware = require('../middlewares/donor.middleware');
 const { isLoggedIn, isDonor } = require('../middlewares/auth.middleware');
 
-const storage = multer.diskStorage({
-    destination: 'public/images/donors',
-    filename: (req, file, cb) => {
-        cb(null, file.fieldname + '-' + uuidv4() + '.' + file.originalname.split('.').pop());
-    }
-});
+// ⭐ Use Cloudinary storage instead of disk storage
+const { storage } = require('../config/cloudinary.config');
 const upload = multer({ storage });
 
-// All routes here require user to be logged in and to be a donor
+// All routes require the user to be logged in + be a donor
 router.use(isLoggedIn, isDonor);
 
+// Donor Dashboard
 router.get('/', donorController.viewDonorDashboard);
 
-router.put('/', upload.single('profileImage'), donorMiddleware.validateDonorProfileData, donorController.updateDonorProfile);
+// Update Donor Profile (profile image upload)
+router.put(
+    '/',
+    upload.single('profileImage'),
+    donorMiddleware.validateDonorProfileData,
+    donorController.updateDonorProfile
+);
 
+// Donor Account Page
 router.get('/account', donorController.renderDonorAccountPage);
 
+// Toggle Notification Settings
 router.post('/toggle-notifications', donorController.toggleDonorNotifications);
 
 module.exports = router;
