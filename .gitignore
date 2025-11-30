@@ -1,9 +1,5 @@
-# Dependencies
-/Project/node_modules/
+# Dependency directories
+/node_modules
 
-# Static files
-/Project/public/documents/
-/Project/public/images/
-
-# Environment variables
-# /Project/.env
+# Environment variables (DO NOT COMMIT SECRETS)
+.env
