@@ -27,6 +27,12 @@
                             href="/donations/new">Donate</a>
                     </li>
                 <% } %>
+                <% if(user && user.role.toLowerCase()==='ngo') { %>
+                    <li class="nav-item mx-2">
+                        <a class="nav-link active fw-semibold <%= activePage === 'donations' ? 'current' : '' %>"
+                            href="/donations/">Donations</a>
+                    </li>
+                <% } %>
             </ul>
             <% if(!user) { %>
                 <a class="nav-link active" aria-current="page" href="/auth/login">
@@ -74,10 +80,15 @@
     </div>
     <div class="offcanvas-body">
         <ul class="navbar-nav">
-            <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="/about">About us</a></li>
-            <li class="nav-item"><a class="nav-link" href="/contact">Contact us</a></li>
-            <li class="nav-item"><a class="nav-link" href="/donations/new">Donate now</a></li>
+            <li class="nav-item"><a class="nav-link <%= activePage === 'home' ? 'current' : '' %>" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link <%= activePage === 'about' ? 'current' : '' %>" href="/about">About us</a></li>
+            <li class="nav-item"><a class="nav-link <%= activePage === 'contact' ? 'current' : '' %>" href="/contact">Contact us</a></li>
+            <% if(!user || user.role.toLowerCase()==='donor') { %>
+                <li class="nav-item"><a class="nav-link <%= activePage === 'donate' ? 'current' : '' %>" href="/donations/new">Donate now</a></li>
+            <% } %>
+            <% if(user && user.role === 'NGO') { %>
+                <li class="nav-item"><a class="nav-link <%= activePage === 'donations' ? 'current' : '' %>" href="/donations/">Donations</a></li>
+            <% } %>
         </ul>
     </div>
     <div class="offcanvas-footer border-top">

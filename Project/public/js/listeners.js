@@ -296,9 +296,13 @@ function handleOpenImagesModal(event, tableType) {
     if (tableType === 'donation-table') {
         imagesModalURLs = donationItems[ind]['images'];
     }
+    else if(tableType === 'donation-completion'){
+        imagesModalURLs = completionImages;
+    }
     else {
         imagesModalURLs = foodItems[ind]['itemImages'];
     }
+
     imagesModalIndex = 0;
     viewerImage.src = imagesModalURLs[imagesModalIndex];
     if (imagesModalURLs.length === 1) {

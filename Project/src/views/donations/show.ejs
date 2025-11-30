@@ -22,18 +22,13 @@
                 Go Back
             </button>
             <div class="d-flex gap-2 flex-wrap">
-                <% if (donation.status === 'Assigned' && donation.assignedNgoId) { %>
-                    <% if(user.role === 'Donor') { %>
+                <% if (donation.status !== 'New' && donation.assignedNgoId) { %>
+                    <% if(isDonor) { %>
                         <a href="/ngo/<%= donation.assignedNgoId %>" class="btn btn-outline-primary me-2">
                             View Assigned NGO
                         </a>
                     <% } %>
-                    <% if(user.role === 'NGO' && donation.status === 'Scheduled') { %>
-                        <button type="button" class="btn btn-outline-success me-2" onclick="markAsPickedUp()">
-                            Mark as Picked Up
-                        </button>
-                    <% } %>
-                    <% if(user.role === 'NGO' || user.role === 'Donor') { %>
+                    <% if((user.role === 'NGO' || isDonor) && donation.status !== "Completed") { %>
                         <button type="button" class="btn btn-outline-danger" onclick="cancelDonationPickup()">
                             Cancel Pickup
                         </button>
@@ -41,12 +36,47 @@
                 <% } %>
 
                 <% if(user.role === 'NGO') { %>
-                    <button type="button" class="btn btn-outline-warning" id="requestPickupBtn" data-bs-toggle="modal" data-bs-target="#requestDonationModal">
-                        <i class="fas fa-plus me-1"></i>Request Pickup
-                    </button>
+                    <% if (donation.status === "New") { %>
+                        <% if (!isRequested) { %>
+                            <button type="button" class="btn btn-outline-warning" id="requestPickupBtn" data-bs-toggle="modal" data-bs-target="#requestDonationModal">
+                                <i class="fas fa-plus me-1"></i>Request Pickup
+                            </button>
+                        <% } else { %>
+                            <button type="button" class="btn btn-success" disabled>
+                                <i class="bi bi-check2-circle me-1"></i>Requested
+                            </button>
+                        <% } %>
+                    <% } else if(donation.status === 'Assigned') { %>
+                        <button type="button" class="btn btn-outline-success me-2" data-bs-toggle="modal" 
+                            data-bs-target="#schedulePickupModal" data-donation-id="<%= donation._id %>">
+                            Schedule Pickup
+                        </button>
+                    <% } else if(donation.status === 'Scheduled') { %>
+                        <button type="button" class="btn btn-outline-success me-2" onclick="markAsPickedUp()">
+                            Mark as Picked Up
+                        </button>
+                    <% } else if(donation.status === 'Picked') { %>
+                        <button type="button" class="btn btn-outline-success me-2" data-donation-id="<%= donation._id %>"
+                            data-bs-toggle="modal" data-bs-target="#markCompletedModal">
+                            Mark as Completed
+                        </button>
+                    <% } %>
                 <% } %>
 
-                <% if(user.role === 'Donor') { %>
+                <% if (isLeader) { %>
+                    <% if (donation.status === 'Scheduled') { %>
+                        <button type="button" class="btn btn-outline-success me-2" onclick="markAsPickedUp()">
+                            Mark as Picked Up
+                        </button>
+                    <% } else if (donation.status === 'Picked') { %>
+                        <button type="button" class="btn btn-outline-success me-2" data-donation-id="<%= donation._id %>"
+                            data-bs-toggle="modal" data-bs-target="#markCompletedModal">
+                            Mark as Completed
+                        </button>
+                    <% } %>
+                <% } %>
+
+                <% if(isDonor && donation.status === "New") { %>
                     <a href="/donations/<%= donation._id %>/edit">
                         <button type="button" class="btn btn-outline-warning">
                             <i class="fas fa-edit me-1"></i>Edit Donation
@@ -176,6 +206,73 @@
                         </div>
                     </div>
                 </div>
+
+                <% if (donation.status === "Scheduled" || donation.status === "picked") { %>
+                    <!-- Pickup Schedule -->
+                    <div class="card mb-4">
+                        <div class="card-header p-4">
+                            <h3 class="fs-5 mb-0">Pickup Schedule</h3>
+                        </div>
+                        <div class="card-body p-4 pt-0">
+                            <div class="mb-3 d-flex align-items-center gap-2">
+                                <span class="fs-5 text-secondary"><i class="bi bi-clock" style="font-size: 1.1rem;"></i></span>
+                                <div>
+                                    <div class="fw-medium">Date</div>
+                                    <div class="text-muted small">
+                                        <%= donation.pickupSchedule?.date ? new Date(donation.pickupSchedule.date).toDateString() : "NA" %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fs-5 text-secondary"><i class="bi bi-clock" style="font-size: 1.1rem;"></i></span>
+                                <div>
+                                    <div class="fw-medium">Time</div>
+                                    <div class="text-muted small">
+                                        <%= donation.pickupSchedule?.time || "NA" %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Schedule -->
+                    <div class="card mb-4">
+                        <div class="card-header p-4">
+                            <h3 class="fs-5 mb-0">Delivery Schedule</h3>
+                        </div>
+                        <div class="card-body p-4 pt-0">
+                            <div class="mb-3 d-flex align-items-center gap-2">
+                                <span class="fs-5 text-secondary"><i class="bi bi-clock" style="font-size: 1.1rem;"></i></span>
+                                <div>
+                                    <div class="fw-medium">Date</div>
+                                    <div class="text-muted small">
+                                        <%= donation.deliverySchedule?.date ? new Date(donation.deliverySchedule.date).toDateString() : "NA" %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3 d-flex align-items-center gap-2">
+                                <span class="fs-5 text-secondary"><i class="bi bi-clock" style="font-size: 1.1rem;"></i></span>
+                                <div>
+                                    <div class="fw-medium">Time</div>
+                                    <div class="text-muted small">
+                                        <%= donation.deliverySchedule?.time || "NA" %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fs-5 text-secondary"><i class="bi bi-clock" style="font-size: 1.1rem;"></i></span>
+                                <div>
+                                    <div class="fw-medium">Location</div>
+                                    <div class="text-muted small">
+                                        <%= donation.deliverySchedule?.location || "NA" %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+
+                
             </div>
         </div>
 
@@ -305,8 +402,48 @@
             </div>
         </div>
 
+        <% if (donation.status === "Completed") { %>
+            <div class="card mb-4 p-4">
+                <div class="card-header mb-4 p-0">
+                    <h3 class="fs-5 mb-0">Delivery Information</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between flex-wrap">
+                            <div class="d-flex gap-2 flex-nowrap mb-2">
+                                <span class="fs-4 text-secondary"><i class="bi bi-clock" style="font-size: 1.1rem;"></i></span>
+                                <div>
+                                    <p class="mb-0 fw-medium"> Completed At: </p>
+                                    <p class="mb-0 text-muted small"> 
+                                        <%- donation.completedAt.toLocaleString() %> 
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2">
+                        <h6 class="fw-semibold mb-2">Completion Proof</h6>
+                    
+                        <% if (donationTeam && donationTeam.completionProof.length> 0) { %>
+                            <div class="row g-2 mb-4">
+                                <% donationTeam.completionProof.forEach(img=> { %>
+                                    <div class="col-6 col-md-3">
+                                        <img src="<%= img %>" class="img-fluid rounded shadow-sm" style="cursor: pointer;"
+                                            data-bs-toggle="modal" data-bs-target="#imagePreviewModal" data-img="<%= img %>">
+                                    </div>
+                                <% }) %>
+                            </div>
+                        <% } else { %>
+                            <p class="text-muted small">No completion images available.</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
         <!-- Pickup Requests from NGOs -->
-        <% if(user.role === 'Donor' && donation.status === 'New') { %>
+        <% if(isDonor && donation.status === 'New') { %>
             <div class="card mb-4 p-4" id="donationRequests">
                 <div class="card-header p-0 mb-4">
                     <h3 class="fs-5 mb-1">Pickup Requests from NGOs</h3>
@@ -318,19 +455,19 @@
                             <div class="d-flex align-items-start gap-3 border rounded p-3 mb-3 request-item">
                                 <span class="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
                                     style="width:48px;height:48px;">
-                                    <%= request.ngoId.firstName ? request.ngoId.firstName.charAt(0).toUpperCase() : 'N' %>
+                                    <%= request.ngo.name ? request.ngo.name.charAt(0).toUpperCase() : 'N' %>
                                 </span>
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <div class="fw-semibold">
-                                            <%= request.ngoId.firstName %> <%= request.ngoId.lastName %>
+                                            <%= request.ngo.name %>
                                         </div>
                                         <span class="text-muted small">
                                             <%= request.requestDate ? new Date(request.requestDate).toLocaleDateString() : new Date(request.createdAt).toLocaleDateString() %>
                                         </span>
                                     </div>
                                     <div class="text-muted small mb-1">
-                                        Contact: <%= request.ngoId.firstName %> <%= request.ngoId.lastName %> • <%= request.ngoId.contact %>
+                                        Contact: <%= request.ngo.contact %>
                                     </div>
                                     <div class="mb-2"><%= request.message %></div>
                                     <div class="d-flex gap-2">
@@ -352,93 +489,218 @@
                 </div>
             </div>
         <% } %>
+
+        <% if (user.role==='NGO' ) { %>
+            <!-- Modal for scheduling pickup & delivery -->
+            <div class="modal fade" id="schedulePickupModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+        
+                        <form id="schedulePickupForm">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Schedule Pickup & Delivery</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+        
+                            <div class="modal-body px-5" style="max-height: 70vh; overflow-y: auto;">
+        
+                                <!-- PICKUP SCHEDULE -->
+                                <h6 class="fw-bold mb-2">Pickup Schedule</h6>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label class="form-label">Pickup Date</label>
+                                        <input type="date" class="form-control" name="pickupDate" required>
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label">Pickup Time</label>
+                                        <input type="time" class="form-control" name="pickupTime" required>
+                                    </div>
+                                </div>
+        
+                                <!-- DELIVERY SCHEDULE -->
+                                <h6 class="fw-bold mb-2">Delivery Schedule</h6>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label class="form-label">Delivery Date</label>
+                                        <input type="date" class="form-control" name="deliveryDate">
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label">Delivery Time</label>
+                                        <input type="time" class="form-control" name="deliveryTime">
+                                    </div>
+                                </div>
+        
+                                <div class="mb-3">
+                                    <label class="form-label">Delivery Location</label>
+                                    <input type="text" class="form-control" name="deliveryLocation"
+                                        placeholder="Enter delivery location">
+                                </div>
+        
+                                <hr>
+        
+                                <!-- VOLUNTEER SELECTION -->
+                                <h6 class="fw-bold mb-2">Select Volunteers</h6>
+                                <div id="volunteerList" class="border rounded p-2 mb-3"
+                                    style="max-height: 200px; overflow-y: auto;">
+                                    <% availableVolunteers.forEach(v=> { %>
+                                        <div class="form-check">
+                                            <input class="form-check-input volunteer-checkbox" type="checkbox"
+                                                value="<%= v.userId %>" data-name="<%= v.firstName + ' ' + v.lastName %>">
+                                            <label class="form-check-label">
+                                                <%= v.firstName %> <%= v.lastName %>
+                                            </label>
+                                        </div>
+                                    <% }) %>
+                                </div>
+        
+                                <!-- TEAM LEADER SELECT -->
+                                <div class="mb-3">
+                                    <label class="form-label">Select Team Leader (Optional)</label>
+                                    <select class="form-select" name="leaderId" id="leaderSelect">
+                                        <option value="">-- Select Leader --</option>
+                                    </select>
+                                </div>
+        
+                            </div>
+        
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success w-100">Schedule Now</button>
+                            </div>
+        
+                        </form>
+        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for donation pickup request -->
+            <div class="modal fade" id="requestDonationModal" tabindex="-1" aria-labelledby="requestDonationLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                    
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="requestDonationLabel">Request Donation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body">
+                        <form id="requestDonationForm">
+                        <!-- Hidden Inputs -->
+                        <input type="hidden" id="donationId" name="donationId" value="<%= donation._id %>">
+                        <input type="hidden" id="donorId" name="donorId" value="<%= donation.donorId._id %>">
+
+                        <!-- Message Textarea -->
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea id="message" name="message" class="form-control" rows="4" placeholder="Write your message here..." required></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Send Request</button>
+                        </div>
+                        </form>
+                    </div>
+
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <% if (user.role==='NGO' || isLeader) { %>
+            <div class="modal fade" id="markCompletedModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+        
+                        <form id="markCompletedForm" enctype="multipart/form-data">
+        
+                            <div class="modal-header">
+                                <h5 class="modal-title">Upload Completion Proof (10 Images Required)</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+        
+                            <div class="modal-body"  style="max-height: 70vh; overflow-y: auto;">
+        
+                                <!-- IMAGE INPUT -->
+                                <div class="mb-3">
+                                    <label class="form-label">Select Exactly 10 Images</label>
+                                    <input type="file" class="form-control" id="completionImages" name="completionImages"
+                                        accept="image/*" multiple required>
+                                </div>
+        
+                                <!-- PREVIEW CONTAINER -->
+                                <div id="imagePreview" class="row g-2"></div>
+        
+                            </div>
+        
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success w-100">
+                                    Upload & Mark Completed
+                                </button>
+                            </div>
+        
+                        </form>
+        
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
     </main>
 
     <!-- Transparent Modal for viewing images -->
     <%- include('../partials/viewImagesModal') %>
 
-    <!-- Modal for donation pickup request -->
-    <div class="modal fade" id="requestDonationModal" tabindex="-1" aria-labelledby="requestDonationLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-        
-        <!-- Modal Header -->
-        <div class="modal-header">
-            <h5 class="modal-title" id="requestDonationLabel">Request Donation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="modal-body">
-            <form id="requestDonationForm">
-            <!-- Hidden Inputs -->
-            <input type="hidden" id="donationId" name="donationId" value="<%= donation._id %>">
-            <input type="hidden" id="donorId" name="donorId" value="<%= donation.donorId._id %>">
-            <input type="hidden" id="ngoId" name="ngoId" value="<%= ngoId.toString() %>">
-
-            <!-- Message Textarea -->
-            <div class="mb-3">
-                <label for="message" class="form-label">Message</label>
-                <textarea id="message" name="message" class="form-control" rows="4" placeholder="Write your message here..." required></textarea>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="text-end">
-                <button type="submit" class="btn btn-primary">Send Request</button>
-            </div>
-            </form>
-        </div>
-
-        </div>
-    </div>
-    </div>
+    
 
     <!-- Modal for OTP verification -->
     <div class="modal fade" id="otpVerificationModal" tabindex="-1" aria-labelledby="otpVerificationLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-        
-        <!-- Modal Header -->
-        <div class="modal-header">
-            <h5 class="modal-title" id="otpVerificationLabel">OTP Verification</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="modal-body">
-            <div class="text-center mb-4">
-            <p class="text-muted">An OTP has been sent to the donor's contact number for verification.</p>
-            <p class="fw-bold">Please enter the OTP to mark this donation as picked up.</p>
-            </div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
             
-            <form id="otpVerificationForm">
-            <!-- Hidden Inputs -->
-            <input type="hidden" id="otpDonationId" name="donationId" value="<%= donation._id %>">
-            
-            <!-- OTP Input -->
-            <div class="mb-4">
-                <label for="otpInput" class="form-label">Enter OTP</label>
-                <input type="text" id="otpInput" name="otp" class="form-control form-control-lg text-center" 
-                    placeholder="Enter 6-digit OTP" maxlength="6" required>
-                <div class="form-text">Please check the donor's phone for the OTP</div>
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="otpVerificationLabel">OTP Verification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Submit Button -->
-            <div class="d-grid">
-                <button type="submit" class="btn btn-success btn-lg">Verify OTP & Mark as Picked</button>
-            </div>
-            </form>
-            
-            <!-- Resend OTP Button -->
-            <div class="text-center mt-3">
-            <button type="button" class="btn btn-link" onclick="resendOTP()">
-                Didn't receive OTP? Resend
-            </button>
-            </div>
-        </div>
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                <p class="text-muted">An OTP has been sent to the donor's contact number for verification.</p>
+                <p class="fw-bold">Please enter the OTP to mark this donation as picked up.</p>
+                </div>
+                
+                <form id="otpVerificationForm">
+                <!-- Hidden Inputs -->
+                <input type="hidden" id="otpDonationId" name="donationId" value="<%= donation._id %>">
+                
+                <!-- OTP Input -->
+                <div class="mb-4">
+                    <label for="otpInput" class="form-label">Enter OTP</label>
+                    <input type="text" id="otpInput" name="otp" class="form-control form-control-lg text-center" 
+                        placeholder="Enter 6-digit OTP" maxlength="6" required>
+                    <div class="form-text">Please check the donor's phone for the OTP</div>
+                </div>
 
+                <!-- Submit Button -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success btn-lg">Verify OTP & Mark as Picked</button>
+                </div>
+                </form>
+                
+                <!-- Resend OTP Button -->
+                <div class="text-center mt-3">
+                <button type="button" class="btn btn-link" onclick="resendOTP()">
+                    Didn't receive OTP? Resend
+                </button>
+                </div>
+            </div>
+
+            </div>
         </div>
-    </div>
     </div>
 
 
@@ -460,178 +722,363 @@
 
     <!-- Embed donation.foodItems as JS -->
     <script>
-        window.foodItems = <%- JSON.stringify(donation.items) %>;
-        window.viewerDonationImages = <%- JSON.stringify(donation.images || []) %>;
-        window.viewerDonationImagesIndex = 0;
-        window.ngoId = '<%= ngoId ? ngoId.toString() : '' %>';
-        if(ngoId) {
-            console.log(ngoId);
-        }
+            window.foodItems = <%- JSON.stringify(donation.items) %>;
+            window.viewerDonationImages = <%- JSON.stringify(donation.images || []) %>;
+            window.viewerDonationImagesIndex = 0;
 
-        // Function to approve donation request
-        function approveRequest(requestId) {
-            if (confirm('Are you sure you want to approve this request?')) {
-                fetch(`/donations/<%= donation._id %>/requests/${requestId}/approve`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Request approved successfully!');
-                        location.reload();
-                    } else {
-                        alert('Failed to approve request: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while approving the request');
-                });
+            // Function to approve donation request
+            function approveRequest(requestId) {
+                if (confirm('Are you sure you want to approve this request?')) {
+                    fetch(`/donations/<%= donation._id %>/requests/${requestId}/approve`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showAlert('success', 'Request approved successfully!');
+                                location.reload();
+                            } else {
+                                showAlert('danger', 'Failed to approve request: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showAlert('danger', 'An error occurred while approving the request');
+                        });
+                }
             }
-        }
 
             // Function to reject donation request
-        function rejectRequest(requestId, btn) {
-            if (confirm('Are you sure you want to reject this request?')) {
-                fetch(`/donations/<%= donation._id %>/requests/${requestId}/reject`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Request rejected successfully!');
-                        // Remove the request item from the DOM without reloading
-                        if (btn && btn.closest('.request-item')) {
-                            btn.closest('.request-item').remove();
+            function rejectRequest(requestId, btn) {
+                if (confirm('Are you sure you want to reject this request?')) {
+                    fetch(`/donations/<%= donation._id %>/requests/${requestId}/reject`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
                         }
-                    } else {
-                        alert('Failed to reject request: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while rejecting the request');
-                });
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showAlert('success', 'Request rejected successfully!');
+                                // Remove the request item from the DOM without reloading
+                                if (btn && btn.closest('.request-item')) {
+                                    btn.closest('.request-item').remove();
+                                }
+                            } else {
+                                showAlert('danger', 'Failed to reject request: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showAlert('danger', 'An error occurred while rejecting the request');
+                        });
+                }
             }
-        }
 
-        // Function to cancel donation pickup
-        function cancelDonationPickup() {
-            if (confirm('Are you sure you want to cancel this donation pickup? This will allow you to assign it to another NGO.')) {
-                fetch(`/donations/<%= donation._id %>/cancel-pickup`, {
+            // Function to cancel donation pickup
+            function cancelDonationPickup() {
+                if (confirm('Are you sure you want to cancel this donation pickup? This will allow you to assign it to another NGO.')) {
+                    fetch(`/donations/<%= donation._id %>/cancel-pickup`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showAlert('success', 'Donation pickup cancelled successfully! You can now assign it to another NGO.');
+                                location.reload();
+                            } else {
+                                showAlert('danger', 'Failed to cancel pickup: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showAlert('danger', 'An error occurred while cancelling the pickup');
+                        });
+                }
+            }
+
+            // Function to mark donation as picked up
+            function markAsPickedUp() {
+                // Show OTP modal
+                const otpModal = new bootstrap.Modal(document.getElementById('otpVerificationModal'));
+                otpModal.show();
+
+                // Send OTP to donor
+                sendOTPToDonor();
+            }
+
+            // Function to send OTP to donor
+            function sendOTPToDonor() {
+                fetch(`/donations/<%= donation._id %>/send-otp`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Donation pickup cancelled successfully! You can now assign it to another NGO.');
-                        location.reload();
-                    } else {
-                        alert('Failed to cancel pickup: ' + data.message);
-                    }
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('OTP sent successfully');
+                            showAlert('success', 'OTP sent to donor successfully!');
+                        } else {
+                            showAlert('danger', 'Failed to send OTP: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error sending OTP:', error);
+                        showAlert('danger', 'Failed to send OTP');
+                    });
+            }
+
+            // Function to resend OTP
+            function resendOTP() {
+                sendOTPToDonor();
+                showAlert('success', 'OTP resent successfully!');
+            }
+
+            // Handle OTP form submission
+            document.getElementById('otpVerificationForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const otp = document.getElementById('otpInput').value;
+                const donationId = document.getElementById('otpDonationId').value;
+
+                if (!otp || otp.length !== 6) {
+                    showAlert('danger', 'Please enter a valid 6-digit OTP');
+                    return;
+                }
+
+                // Verify OTP and mark as picked
+                verifyOTPAndMarkPicked(donationId, otp);
+            });
+
+            // Function to verify OTP and mark donation as picked
+            function verifyOTPAndMarkPicked(donationId, otp) {
+                fetch(`/donations/${donationId}/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ otp })
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while cancelling the pickup');
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert('success', 'OTP verified successfully! Donation marked as picked up.');
+
+                            // Close modal
+                            const otpModal = bootstrap.Modal.getInstance(document.getElementById('otpVerificationModal'));
+                            otpModal.hide();
+
+                            // Reload page to show updated status
+                            location.reload();
+                        } else {
+                            showAlert('danger', 'OTP verification failed: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showAlert('danger', 'An error occurred while verifying OTP');
+                    });
+            }
+
+            // Schedule Pickup Logic for NGO
+            <% if (user.role === 'NGO') { %>
+                
+                let selectedDonationId = null;
+                let selectedVolunteers = [];
+
+                const modal = document.getElementById('schedulePickupModal');
+
+                if(modal) {
+                    modal.addEventListener('show.bs.modal', function (event) {
+                        const button = event.relatedTarget;
+                        selectedDonationId = button.getAttribute('data-donation-id');
+
+                        selectedVolunteers = [];
+                        document.querySelectorAll('.volunteer-checkbox').forEach(cb => cb.checked = false);
+                        updateLeaderDropdown();
+                    });
+                }
+
+                document.body.addEventListener('change', function (e) {
+                    if (e.target.classList.contains('volunteer-checkbox')) {
+                        const userId = e.target.value;
+                        const name = e.target.dataset.name;
+
+                        if (e.target.checked) {
+                            selectedVolunteers.push({ userId, name });
+                        } else {
+                            selectedVolunteers = selectedVolunteers.filter(v => v.userId !== userId);
+                        }
+
+                        updateLeaderDropdown();
+                    }
                 });
-            }
-        }
 
-        // Function to mark donation as picked up
-        function markAsPickedUp() {
-            // Show OTP modal
-            const otpModal = new bootstrap.Modal(document.getElementById('otpVerificationModal'));
-            otpModal.show();
-            
-            // Send OTP to donor
-            sendOTPToDonor();
-        }
+                // Update Leader Dropdown from Selected Volunteers
+                function updateLeaderDropdown() {
+                    const leaderSelect = document.getElementById('leaderSelect');
+                    leaderSelect.innerHTML = `<option value="">-- Select Leader --</option>`;
 
-        // Function to send OTP to donor
-        function sendOTPToDonor() {
-            fetch(`/donations/<%= donation._id %>/send-otp`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+                    selectedVolunteers.forEach(v => {
+                        const option = document.createElement('option');
+                        option.value = v.userId;
+                        option.textContent = v.name;
+                        leaderSelect.appendChild(option);
+                    });
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('OTP sent successfully');
-                } else {
-                    alert('Failed to send OTP: ' + data.message);
+
+                // Schedule Pickup Form Submission
+                function submitSchedulePickupForm(formData) {
+                    const payload = {
+                        pickupSchedule: {
+                            date: formData.get('pickupDate'),
+                            time: formData.get('pickupTime')
+                        },
+                        deliverySchedule: {
+                            date: formData.get('deliveryDate') || null,
+                            time: formData.get('deliveryTime') || null,
+                            location: formData.get('deliveryLocation') || ''
+                        },
+                        volunteers: selectedVolunteers.map(v => v.userId),
+                        leaderId: formData.get('leaderId') || null
+                    };
+
+                    fetch(`/donations/${selectedDonationId}/schedule-pickup`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                showAlert("success", "Pickup scheduled successfully!");
+                                location.reload();
+                            } else {
+                                showAlert("danger", data.message || "Failed to schedule.");
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showAlert("danger", "Server error");
+                        });
                 }
-            })
-            .catch(error => {
-                console.error('Error sending OTP:', error);
-                alert('Failed to send OTP');
+
+                // FORM VALIDATION
+                document.getElementById('schedulePickupForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                if(selectedVolunteers.length < 2) {
+                    showAlert('danger', 'Please select at least two volunteers for the pickup team.');
+                    return;
+                }
+
+                const formData = new FormData(this);
+                submitSchedulePickupForm(formData);            
             });
-        }
-
-        // Function to resend OTP
-        function resendOTP() {
-            sendOTPToDonor();
-            alert('OTP resent successfully!');
-        }
-
-        // Handle OTP form submission
-        document.getElementById('otpVerificationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
             
-            const otp = document.getElementById('otpInput').value;
-            const donationId = document.getElementById('otpDonationId').value;
-            
-            if (!otp || otp.length !== 6) {
-                alert('Please enter a valid 6-digit OTP');
-                return;
-            }
-            
-            // Verify OTP and mark as picked
-            verifyOTPAndMarkPicked(donationId, otp);
-        });
+            <% } %>
+     
+            // Mark Donation as Completed Logic for NGO or Team Leader
+            <% if (user.role==='NGO' || isLeader) { %>
+                
+                let completedDonationId = null;
+                const imageInput = document.getElementById("completionImages");
+                const previewContainer = document.getElementById("imagePreview");
 
-        // Function to verify OTP and mark donation as picked
-        function verifyOTPAndMarkPicked(donationId, otp) {
-            fetch(`/donations/${donationId}/verify-otp`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ otp })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('OTP verified successfully! Donation marked as picked up.');
-                    
-                    // Close modal
-                    const otpModal = bootstrap.Modal.getInstance(document.getElementById('otpVerificationModal'));
-                    otpModal.hide();
-                    
-                    // Reload page to show updated status
-                    location.reload();
-                } else {
-                    alert('OTP verification failed: ' + data.message);
+                document.getElementById('markCompletedModal').addEventListener('show.bs.modal', function (e) {
+                completedDonationId = e.relatedTarget.getAttribute("data-donation-id");
+
+                imageInput.value = "";
+                previewContainer.innerHTML = "";
+                });
+
+                // MAGE VALIDATION + PREVIEW
+                imageInput.addEventListener("change", function () {
+                const files = Array.from(this.files);
+
+                previewContainer.innerHTML = "";
+
+                // MORE THAN 10
+                if (files.length > 10) {
+                    showAlert("danger", "You must select exactly 10 images.");
+                    this.value = "";
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while verifying OTP');
-            });
-        }
+
+                // LESS THAN 10 → show preview
+                files.forEach(file => {
+                    if (!file.type.startsWith("image/")) {
+                    showAlert("danger", "Only image files are allowed.");
+                    imageInput.value = "";
+                    previewContainer.innerHTML = "";
+                    return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                    const col = document.createElement("div");
+                    col.className = "col-3";
+
+                    col.innerHTML = `
+                        <img src="${e.target.result}" class="img-fluid rounded shadow-sm">
+                    `;
+
+                    previewContainer.appendChild(col);
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+                });
+
+                // FORM SUBMIT
+                document.getElementById("markCompletedForm").addEventListener("submit", function (e) {
+                    e.preventDefault();
+
+                    const files = imageInput.files;
+
+                    // Files must be less than or equal to 10
+                    if (!files || files.length > 10) {
+                        showAlert("danger", "Maximum 10 images are required to mark as completed.");
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    for (let file of files) {
+                        formData.append("completionImages", file);
+                    }
+
+                    fetch(`/donations/${completedDonationId}/mark-completed`, {
+                        method: "POST",
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert("success", "Donation marked as completed!");
+                            setTimeout(() => location.reload(), 800);
+                        } else {
+                            showAlert("danger", data.message || "Failed to mark completed");
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showAlert("danger", "Server error");
+                    });
+                });
+
+            <% } %>
+
     </script>
 
     <%- include('../partials/footer') %>
 
 <% } %>
-

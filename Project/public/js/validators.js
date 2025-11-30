@@ -110,7 +110,7 @@ function validateRegistrationForm(form) {
     };
 
     const isEmailValid = (email) => {
-        const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        const re = /^[a-zA-Z0-9._&-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         return re.test(String(email).toLowerCase());
     };
 
@@ -397,7 +397,7 @@ function validateLoginForm(form) {
     };
 
     const isEmailValid = (email) => {
-        const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        const re = /^[a-zA-Z0-9._&-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         return re.test(String(email).toLowerCase());
     };
 
@@ -500,7 +500,7 @@ function validateForgetResetForm(form) {
     };
 
     const isEmailValid = (email) => {
-        const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        const re = /^[a-zA-Z0-9._&-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         return re.test(String(email).toLowerCase());
     };
 
@@ -650,7 +650,7 @@ function validateDonationForm(donationForm, action) {
     };
 
     const isEmailValid = email =>
-        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim());
+        /^[a-zA-Z0-9._&-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(email.trim());
 
     const isPhoneValid = phone => /^\d{10}$/.test(phone.trim());
 
@@ -1172,7 +1172,6 @@ function validateRequestDonationForm(form) {
 async function submitRequestDonationForm(form) {
     const donationId = document.getElementById("donationId").value;
     const donorId = document.getElementById("donorId").value;
-    const ngoId = document.getElementById("ngoId").value;
     const message = document.getElementById("message").value;
 
     try {
@@ -1182,7 +1181,7 @@ async function submitRequestDonationForm(form) {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ donationId, donorId, ngoId, message })
+            body: JSON.stringify({ donationId, donorId, message })
         });
 
         const result = await response.json();

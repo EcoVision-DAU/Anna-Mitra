@@ -46,12 +46,25 @@
                             </div>
                         </div>
     
-                        <div class="mt-3 mt-md-0">
-                            <button class="btn btn-success me-2" disabled>
-                                <i class="bi bi-check-circle me-1"></i>Joined
-                            </button>
-                            <button class="btn btn-dark">Contact NGO</button>
-                        </div>
+                        <% if(ngo.hasJoined) { %>
+                            <div class="mt-3 mt-md-0">
+                                <button class="btn btn-success me-2" disabled>
+                                    <i class="bi bi-check-circle me-1"></i>Joined
+                                </button>
+                            </div>
+                        <% } else if(ngo.hasRequested) { %>
+                            <div class="mt-3 mt-md-0">
+                                <button class="btn btn-success me-2" disabled>
+                                    <i class="bi bi-check-circle me-1"></i>Request Sent
+                                </button>
+                            </div>
+                        <% } else { %>
+                            <div class="mt-3 mt-md-0">
+                                <button class="btn btn-success me-2" onclick="joinNGO(this, '<%= ngo.userId %>')">
+                                    <i class="bi bi-plus-circle me-1"></i>Join
+                                </button>
+                            </div>
+                        <% } %>
                     </div>
                 </div>
     
@@ -70,27 +83,27 @@
                         <!-- Impact Statistics -->
                         <div class="ngo-section p-4 rounded d-flex justify-content-around flex-wrap gap-3">
                             <div class="stat-item">
-                                <h5 class="text-success mb-1 text-center">
+                                <h5 class="text-success mb-1 me-2 text-center">
                                     <i class="bi bi-box-seam me-2"></i>
                                     <%= ngo.donationsHandled?.length || 0 %>
                                 </h5>
-                                <p class="text-white mb-0">Active donations</p>
+                                <p class="text-white mb-1">Active donations</p>
                             </div>
     
                             <div class="stat-item">
-                                <h5 class="text-info mb-1 text-center">
+                                <h5 class="text-info mb-1 me-2 text-center">
                                     <i class="bi bi-people-fill me-2"></i>
                                     <%= ngo.volunteers?.length || 0 %>
                                 </h5>
-                                <p class="text-white mb-0">Volunteers team</p>
+                                <p class="text-white mb-1">Volunteers team</p>
                             </div>
     
                             <div class="stat-item">
-                                <h5 class="text-primary mb-1 text-center">
+                                <h5 class="text-primary mb-1 me-2 text-center">
                                     <i class="bi bi-check2-circle me-2"></i>
-                                    <%= ngo.donationsHandled?.length || 0 %>
+                                    <%= ngo.donationsCompleted || 0 %>
                                 </h5>
-                                <p class="text-white mb-0">Donations Delivered</p>
+                                <p class="text-white mb-1">Donations Delivered</p>
                             </div>
                         </div>
                     </div>
@@ -128,5 +141,29 @@
         </div>
     </div>
 </div>
+
+<script>
+    async function joinNGO(btn, ngoId) {
+        try {
+            const res = await fetch(`/ngo/${ngoId}/request-join`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showAlert('success', 'Join request sent successfully!');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Request Sent';
+            } else {
+                showAlert('danger', 'Failed to send join request: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error joining NGO:', error);
+            showAlert('danger', 'An error occurred while trying to join the NGO.');
+        }
+    }
+</script>
 
 <%- include('../partials/footer') %>
