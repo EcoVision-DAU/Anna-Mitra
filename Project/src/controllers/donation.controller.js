@@ -3,6 +3,9 @@ const e = require('express');
 const fs = require('fs');
 const Donation = require('../models/donation.model');
 const DonationRequest = require('../models/donationrequest.model');
+const DonationTeam = require('../models/donationteam.model');
+const NGOProfile = require('../models/ngoprofile.model');
+const VolunteerProfile = require('../models/volunteerprofile.model');
 const userController = require('./user.controller');
 const mongoose = require('mongoose');
 const safeRender = require('../utils/safeRender');
@@ -73,23 +76,87 @@ module.exports.viewDonationDetails = catchAsync(async (req, res, next) => {
             }, next);
         }
 
-        const ngoId = await userController.findOneUserId('NGO');
+        // check if logged in user is donor of this donation
+        const isDonor = req.user && donation.donorId._id.equals(req.user._id);
 
         // Fetch donation requests for this donation with status 'New'
-        const DonationRequest = require('../models/donationrequest.model');
         const donationRequests = await DonationRequest.find({ 
             donationId: donationId, 
             status: 'New' 
-        }).populate('ngoId', 'firstName lastName email contact');
+        }).populate('ngoId', 'contact').sort({ requestDate: -1 });
+
+        const enrichedRequests = await Promise.all(
+            donationRequests.map(async (reqItem) => {
+                const ngoProfile = await NGOProfile.findOne({ userId: reqItem.ngoId._id }).lean();
+
+                return {
+                    _id: reqItem._id,
+                    message: reqItem.message,
+                    requestDate: reqItem.requestDate,
+
+                    ngo: {
+                        name: ngoProfile?.organizationName || "Unknown NGO",
+                        profilePicture: ngoProfile?.profilePicture || null,
+                        contact: reqItem.ngoId.contact
+                    }
+                };
+            })
+        );
+
+        // Check if logged in NGO has already requested this donation
+        let isRequested = false;
+        if (req.user && req.user.role === 'NGO') {
+            const existingRequest = await DonationRequest.findOne({ 
+                donationId: donationId,
+                ngoId: req.user._id,
+                status: 'New'
+            });
+            isRequested = existingRequest ? true : false;
+        }
+
+        // Find available volunteers of loggedin NGO for scheduling pickup (for NGOs)
+        let availableVolunteers = [];
+        if (req.user && req.user.role === 'NGO') {
+            availableVolunteers = await VolunteerProfile.find({
+                joinedNGOs: req.user._id,
+                isAvailable: true
+            }).select('userId firstName lastName');
+        }
+
+        // find donation schedule if scheduled
+        if (donation.status === 'Scheduled') {
+            const donationTeam = await DonationTeam.findOne({ donationId: donation._id });
+            if (donationTeam) {
+                donation.pickupSchedule = donationTeam.pickupSchedule;
+                donation.deliverySchedule = donationTeam.deliverySchedule;
+            }
+        }
+
+        // Check if logged in volunteer is leader of the donation team for this donation
+        let isLeader = false;
+        if (req.user && req.user.role === 'Volunteer') {
+            const donationTeam = await DonationTeam.findOne({
+                donationId: donation._id,
+                leaderId: req.user._id
+            });
+            isLeader = donationTeam ? true : false;
+        }
+        
+        // Find completion images from donation teams 
+        let donationTeam = await DonationTeam.findOne({ donationId: donation._id }).select('completionProof');
 
         return safeRender(res, 'donations/show', {
-            activePage: 'donate',
+            activePage: 'donation-details',
             pageTitle: `${donation.title} | AnnaMitra`,
             messageType: null,
             message: null,
-            ngoId,
             donation,
-            donationRequests
+            isDonor,
+            isRequested,
+            isLeader,
+            donationRequests: enrichedRequests,
+            availableVolunteers,
+            donationTeam
         }, next);
     } catch (error) {
         console.error('Error fetching donation details:', error);
@@ -125,6 +192,16 @@ module.exports.renderEditDonationForm = catchAsync(async (req, res, next) => {
                 pageTitle: 'Donation not found | AnnaMitra',
                 messageType: 'danger',
                 message: 'Donation not found.'
+            }, next);
+        }
+
+        // Ensure that only the donor who created the donation can edit it
+        if (!donation.donorId._id.equals(req.user._id)) {
+            return safeRender(res, '404', {
+                activePage: '404',
+                pageTitle: 'Unauthorized | AnnaMitra',
+                messageType: 'danger',
+                message: 'You are not authorized to edit this donation.'
             }, next);
         }
 
@@ -197,6 +274,7 @@ module.exports.deleteDonation = catchAsync(async (req, res) => {
     }
 
     try {
+        console.log('Deleting donation with ID:', donationId);
         const donation = await Donation.findByIdAndDelete(donationId);
         if (!donation) {
             return res.status(404).json({ success: false, message: 'Donation not found.' });
@@ -250,10 +328,12 @@ module.exports.listDonations = catchAsync(async (req, res, next) => {
 // Add to src/controllers/donation.controller.js
 
 // Handle donation request
-module.exports.handleDonationRequest = catchAsync(async (req, res) => {
-    const { donationId, donorId, ngoId, message } = req.body;
-    
+module.exports.handleDonationRequest = catchAsync(async (req, res) => {  
+    console.log('Handling donation request:', req.body);  
     try {
+        const { donationId, donorId, message } = req.body;
+        const ngoId = req.user._id; 
+
         // Check if a request from this ngoId for this donationId already exists
         const existingRequest = await DonationRequest.findOne({ donationId, ngoId });
         if (existingRequest) {
@@ -282,13 +362,24 @@ module.exports.approveRequest = catchAsync(async (req, res) => {
     const { requestId } = req.params;
     
     try {
-        const request = await DonationRequest.findByIdAndUpdate(requestId, {
-            status: 'Accepted',
-            respondedAt: new Date()
-        });
+        const request = await DonationRequest.findById(requestId);
+
+        // check if logged in donor owns the donation for this request
+        if (request.user && !request.donorId.equals(req.user._id)) {
+            return res.status(403).json({ success: false, message: 'You are not authorized to approve this request.' });
+        }
+        
+        request.status = 'Accepted';
+        request.respondedAt = new Date();
+        await request.save();
         
         // Update donation status to 'Assigned'
         await Donation.findByIdAndUpdate(request.donationId, { status: 'Assigned', assignedNgoId: request.ngoId });
+
+        // Add donation id to ngo's donationsHandled
+        const ngoProfile = await NGOProfile.findOne({ userId: request.ngoId });
+        ngoProfile.donationsHandled.push(request.donationId);
+        await ngoProfile.save();
         
         res.json({ success: true, message: 'Request approved' });
     } catch (error) {
@@ -323,7 +414,7 @@ module.exports.cancelDonationPickup = catchAsync(async (req, res) => {
             return res.status(404).json({ success: false, message: 'Donation not found' });
         }
         
-        if (donation.status !== 'Assigned') {
+        if (donation.status === 'New') {
             return res.status(400).json({ success: false, message: 'Donation is not currently assigned' });
         }
         
@@ -362,6 +453,199 @@ module.exports.cancelDonationPickup = catchAsync(async (req, res) => {
     }
 });
 
+// Schedule Donation Pickup
+module.exports.schedulePickup = catchAsync(async (req, res) => {
+    const { id } = req.params; // donation ID
+    const ngoId = req.user._id; // logged-in NGO user ID
+
+    const {
+        pickupSchedule,
+        deliverySchedule,
+        volunteers,
+        leaderId
+    } = req.body;
+
+    // 1. BASIC VALIDATION
+    if (!pickupSchedule?.date || !pickupSchedule?.time) {
+        return res.status(400).json({
+            success: false,
+            message: "Pickup date and time are required."
+        });
+    }
+
+    if (!volunteers || !Array.isArray(volunteers) || volunteers.length < 2) {
+        return res.status(400).json({
+            success: false,
+            message: "At least two volunteer must be selected."
+        });
+    }
+
+    // 2. FETCH DONATION
+    const donation = await Donation.findById(id);
+
+    if (!donation) {
+        return res.status(404).json({
+            success: false,
+            message: "Donation not found."
+        });
+    }
+
+    // 3. ENSURE NGO OWNS THIS DONATION
+    if (!donation.assignedNgoId || donation.assignedNgoId.toString() !== ngoId.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: "Unauthorized to schedule this donation."
+        });
+    }
+
+    // 4. ENSURE VALID DONATION STATUS
+    if (donation.status !== "Assigned") {
+        return res.status(400).json({
+            success: false,
+            message: "This donation cannot be scheduled at this stage."
+        });
+    }
+
+    // 5. ENSURE VOLUNTEERS ARE VALID & AVAILABLE
+    const volunteerProfiles = await VolunteerProfile.find({
+        userId: { $in: volunteers },
+        isAvailable: true
+    });
+
+    if (volunteerProfiles.length !== volunteers.length) {
+        return res.status(400).json({
+            success: false,
+            message: "One or more selected volunteers are not available."
+        });
+    }
+
+    // 6. ENSURE NONE OF THEM IS ALREADY IN AN ACTIVE TEAM
+    for (let volId of volunteers) {
+        const isAlreadyAssigned = await DonationTeam.exists({
+            volunteers: volId,
+            completionProof: { $size: 0 } // active team
+        });
+
+        if (isAlreadyAssigned) {
+            return res.status(400).json({
+                success: false,
+                message: "One or more volunteers are already assigned to another donation."
+            });
+        }
+    }
+
+    // 7. VALIDATE LEADER (IF PROVIDED)
+    if (leaderId && !volunteers.includes(leaderId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Leader must be selected from chosen volunteers."
+        });
+    }
+
+    // 8. CREATE DONATION TEAM
+    const donationTeam = new DonationTeam({
+        donationId: donation._id,
+        ngoId,
+        pickupSchedule: {
+            date: pickupSchedule.date,
+            time: pickupSchedule.time
+        },
+        deliverySchedule: {
+            date: deliverySchedule?.date || null,
+            time: deliverySchedule?.time || null,
+            location: deliverySchedule?.location || ""
+        },
+        volunteers,
+        leaderId: leaderId || null
+    });
+
+    await donationTeam.save();
+
+    // 9. UPDATE DONATION STATUS → SCHEDULED
+    donation.status = "Scheduled";
+    await donation.save();
+
+    // 10. LOCK ALL SELECTED VOLUNTEERS
+    await VolunteerProfile.updateMany(
+        { userId: { $in: volunteers } },
+        { isAvailable: false }
+    );
+
+    // 11. SUCCESS RESPONSE
+    res.status(201).json({
+        success: true,
+        message: "Pickup scheduled successfully.",
+        donationTeam
+    });
+});
+
+// Mark Donation as Completed
+module.exports.markDonationCompleted = catchAsync(async (req, res) => {
+    const { id } = req.params; // donation ID
+
+    // 1. ENSURE FILES EXIST
+    if (!req.files || req.files.length > 10) {
+        return res.status(400).json({
+            success: false,
+            message: "Maximum 10 completion images are required."
+        });
+    }
+
+    // 2. FIND DONATION TEAM
+    const donationTeam = await DonationTeam.findOne({
+        donationId: id
+    });
+
+    if (!donationTeam) {
+        return res.status(404).json({
+            success: false,
+            message: "Donation team not found."
+        });
+    }
+
+    // 3. SAVE IMAGE PATHS
+    const imageUrls = req.files.map(file => {
+        let imgPath = file.path.replace(/\\/g, '/');
+
+        if (imgPath.includes('public/')) {
+            imgPath = '/' + imgPath.split('public/')[1];
+        } else {
+            imgPath = '/' + imgPath;
+        }
+
+        return imgPath;
+    });
+    donationTeam.completionProof = imageUrls;
+    await donationTeam.save();
+
+    // 4. UPDATE DONATION STATUS → COMPLETED
+    const donation = await Donation.findById(id);
+
+    if (!donation) {
+        return res.status(404).json({
+            success: false,
+            message: "Donation not found."
+        });
+    }
+
+    donation.status = "Completed";
+    donation.completedAt = new Date();
+    await donation.save();
+
+    // 5. UNLOCK ALL VOLUNTEERS
+    await VolunteerProfile.updateMany(
+        { userId: { $in: donationTeam.volunteers } },
+        { isAvailable: true }
+    );
+
+    res.status(200).json({
+        success: true,
+        message: "Donation marked as completed successfully."
+    });
+});
+
+
+
 // Generate and send OTP to donor
 module.exports.sendOTP = catchAsync(async (req, res) => {
     const { id } = req.params; // donation ID
@@ -373,8 +657,8 @@ module.exports.sendOTP = catchAsync(async (req, res) => {
             return res.status(404).json({ success: false, message: 'Donation not found' });
         }
         
-        if (donation.status !== 'Assigned') {
-            return res.status(400).json({ success: false, message: 'Donation is not currently assigned' });
+        if (donation.status !== 'Scheduled') {
+            return res.status(400).json({ success: false, message: 'Donation is not currently scheduled' });
         }
         
         // Generate 6-digit OTP
@@ -418,8 +702,8 @@ module.exports.verifyOTP = catchAsync(async (req, res) => {
             return res.status(404).json({ success: false, message: 'Donation not found' });
         }
         
-        if (donation.status !== 'Assigned') {
-            return res.status(400).json({ success: false, message: 'Donation is not currently assigned' });
+        if (donation.status !== 'Scheduled') {
+            return res.status(400).json({ success: false, message: 'Donation is not currently scheduled' });
         }
         
         // Check if OTP exists and is valid
@@ -446,20 +730,6 @@ module.exports.verifyOTP = catchAsync(async (req, res) => {
             otpGeneratedAt: null
         });
         
-        // Update the donation request status to 'Completed'
-        const DonationRequest = require('../models/donationrequest.model');
-        await DonationRequest.findOneAndUpdate(
-            { 
-                donationId: id, 
-                ngoId: donation.assignedNgoId,
-                status: 'Accepted'
-            },
-            { 
-                status: 'Completed',
-                completedAt: new Date()
-            }
-        );
-        
         res.json({ 
             success: true, 
             message: 'OTP verified successfully! Donation marked as picked up.' 
@@ -470,4 +740,3 @@ module.exports.verifyOTP = catchAsync(async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to verify OTP' });
     }
 });
-
