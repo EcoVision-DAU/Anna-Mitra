@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const donationController = require('../controllers/donation.controller');
 const donationMiddleware = require('../middlewares/donation.middleware');
-const { isLoggedIn, isDonor } = require('../middlewares/auth.middleware');
+const { isLoggedIn, isDonor, isNGO } = require('../middlewares/auth.middleware');
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
@@ -21,14 +21,26 @@ router.use(isLoggedIn);
 
 router.get('/', donationController.listDonations);
 
+router.get('/new', isDonor, donationController.renderDonationForm);
+
+router.get('/:id', donationController.viewDonationDetails);
+
+router.post('/:id/requests', isNGO, donationController.handleDonationRequest);
+
+router.post('/:id/cancel-pickup', donationController.cancelDonationPickup);
+
+router.post('/:id/schedule-pickup', isNGO, donationController.schedulePickup);
+
+router.post('/:id/mark-completed', upload.any(), donationController.markDonationCompleted);
+
+// OTP routes
+router.post('/:id/send-otp', donationController.sendOTP);
+router.post('/:id/verify-otp', donationController.verifyOTP);
+
 // Only donors can create, edit, or delete donations
 router.use(isDonor);
 
-router.get('/new', donationController.renderDonationForm);
-
 router.post('/', upload.any(), donationMiddleware.validateDonationData, donationController.submitDonationForm);
-
-router.get('/:id', donationController.viewDonationDetails);
 
 router.get('/:id/edit', donationController.renderEditDonationForm);
 
@@ -36,17 +48,11 @@ router.put('/:id/', upload.any(), donationMiddleware.validateDonationData, donat
 
 router.delete('/:id', donationController.deleteDonation);
 
-router.post('/:id/requests', donationController.handleDonationRequest);
-
 router.post('/:id/requests/:requestId/approve', donationController.approveRequest);
 
 router.post('/:id/requests/:requestId/reject', donationController.rejectRequest);
 
-router.post('/:id/cancel-pickup', donationController.cancelDonationPickup);
 
-// OTP routes
-router.post('/:id/send-otp', donationController.sendOTP);
-router.post('/:id/verify-otp', donationController.verifyOTP);
 
 
 module.exports = router;
