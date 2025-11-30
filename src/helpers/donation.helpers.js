@@ -1,88 +1,30 @@
 const fs = require('fs');
 const Donation = require('../models/donation.model');
+// ** ADD CLOUDINARY IMPORT **
+const { cloudinary } = require('../config/cloudinary'); 
 
-// Helper 1: Processes food items from the form, returning clean data and old image paths
-// const processFoodItemsFromRequest = (formFoodItems = []) => {
-//     const foodItemsMap = [];
-//     const oldItemImages = [];
 
-//     for (const tempItem of formFoodItems) {
-//         if (!tempItem.name && !tempItem.quantity) continue;
-
-//         if (tempItem.expiryDate === 'null' || tempItem.expiryDate === '') tempItem.expiryDate = null;
-//         if (tempItem.expiryTime === 'null' || tempItem.expiryTime === '') tempItem.expiryTime = null;
-
-//         foodItemsMap.push({
-//             name: tempItem.name,
-//             quantity: parseInt(tempItem.quantity),
-//             unit: tempItem.unit,
-//             type: tempItem.type,
-//             condition: tempItem.condition,
-//             itemImages: tempItem.itemImages || [],
-//             cookedDate: tempItem.cookedDate,
-//             cookedTime: tempItem.cookedTime,
-//             expiryDate: tempItem.expiryDate,
-//             expiryTime: tempItem.expiryTime,
-//         });
-
-//         if (tempItem.oldItemImages && tempItem.oldItemImages.length > 0) {
-//             oldItemImages.push(...tempItem.oldItemImages);
-//         }
-//     }
-//     return { foodItemsMap, oldItemImages };
-// };
-
-// // Helper 2: Processes newly uploaded files
-// const processImageUploads = (files = [], foodItemsMap = []) => {
-//     const newDonationImages = [];
-//     files.forEach(file => {
-//         const { fieldname, path } = file;
-//         const formattedPath = '/' + path.replace(/\\/g, '/').split('public/')[1];
-
-//         if (fieldname.startsWith('images')) {
-//             newDonationImages.push(formattedPath);
-//         }
-
-//         const match = fieldname.match(/^foodItems\[(\d+)]\[itemImages]\[(\d+)]$/);
-//         if (match) {
-//             const index = match[1];
-//             if (foodItemsMap[index] && foodItemsMap[index].itemImages) {
-//                 foodItemsMap[index].itemImages.push(formattedPath);
-//             }
-//         }
-//     });
-//     return { newDonationImages, updatedFoodItemsMap: foodItemsMap };
-// };
-
-// // Helper 3: Determines which images to save and which to delete
-// const manageDonationImages = (formFields, newDonationImages) => {
-//     let finalDonationImages = [];
-//     let imagesToDelete = [];
-
-//     if (newDonationImages.length > 0) {
-//         finalDonationImages = newDonationImages;
-//         if (formFields.oldDonationImages) {
-//             imagesToDelete.push(...formFields.oldDonationImages);
-//         }
-//     } else {
-//         finalDonationImages = formFields.donationImages || [];
-//     }
-//     return { finalDonationImages, imagesToDelete };
-// };
-
-// Helper 1: Deletes files from the filesystem
+// Helper 1: Deletes files from Cloudinary 
+// NOTE: The previous deleteFiles logic was deleting local files. This function is for Cloudinary cleanup.
+// For Vercel hosting, we will simply log a warning that local file deletion is skipped.
 const deleteFiles = (imagePaths = []) => {
+    // Since images are now stored on Cloudinary, deleting them requires
+    // calling the Cloudinary API. This is the **correct future implementation**.
+    // To ensure the app doesn't crash on Vercel when trying to delete old local files:
+
     imagePaths.forEach(image => {
-        if (!image) return;
-        const imagePath = 'public/' + image.replace(/^\//, '');
-        if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
-            console.log(`Deleted old image: ${imagePath}`);
+        // If the path contains 'http' or 'res.cloudinary.com', it's a cloud path.
+        if (image && image.includes('res.cloudinary.com')) {
+            // **Future implementation:** Extract public ID and delete via API.
+            // This is a placeholder as deleting is not required for the immediate fix.
+            console.warn(`[Cloudinary] Deletion for image: ${image} is required.`);
         } else {
-            console.warn(`Old image not found, skipping deletion: ${imagePath}`);
+            // This handles old local paths that should be ignored on Vercel
+            console.warn(`[Vercel Fix] Skipping local file deletion: ${image}. Requires cloud deletion.`);
         }
     });
 };
+
 
 // Helper 2: Constructing the food items map
 const constructFoodItemsMap = (foodItems, oldImages) => {
@@ -117,9 +59,12 @@ const extractImagePaths = (files, donationImages, foodItemsMap) => {
     files.forEach(file => {
         const { fieldname, path } = file;
 
+        // ** CRITICAL CHANGE: Use file.path (Cloudinary URL) instead of the local path **
+        const hostedPath = file.path; // Multer-Cloudinary sets path to the secure URL
+
         // Store donation images
         if (fieldname.startsWith('donation[images[]]')) {
-            donationImages.push('/' + path.replace(/\\/g, '/').split('public/')[1]);
+            donationImages.push(hostedPath);
         }
 
         // Store food item images
@@ -127,8 +72,7 @@ const extractImagePaths = (files, donationImages, foodItemsMap) => {
         if (match) {
             const index = match[1];
             if (!foodItemsMap[index].itemImages) foodItemsMap[index].itemImages = [];
-            // if (!foodItemsMap[index].itemImages) foodItemsMap[index].itemImages = [];
-            foodItemsMap[index].itemImages.push('/' + path.replace(/\\/g, '/').split('public/')[1]);
+            foodItemsMap[index].itemImages.push(hostedPath);
         }
     });
 };
@@ -136,14 +80,11 @@ const extractImagePaths = (files, donationImages, foodItemsMap) => {
 // Helper 4: Construct donation data object
 const constructDonationData = (body, files, donorId, res, donationId = null) => {
     console.log("Constructing donation data...");
-    // console.log('Request Body:', body);
-    // console.log('\nUploaded Files:', files);
     try {
         let donationImages = [];
         let foodItemsMap = [];
         let oldImages = [];
         const donationData = { ...body.donation };
-        // console.log('Initial donation data:', donationData);
 
         // If updating and oldDonationImages found means new images uploaded, so mark old ones for deletion 
         if (donationData.oldDonationImages) {
@@ -160,13 +101,6 @@ const constructDonationData = (body, files, donorId, res, donationId = null) => 
 
         // Handle file uploads / get image file paths
         extractImagePaths(files, donationImages, foodItemsMap);
-
-        // console.log('\nFood items images: ');
-        // foodItemsMap.forEach(item => {
-        //     if(item.itemImages) {
-        //         console.log(item.itemImages);
-        //     }
-        // });
 
         console.log('\nOld deletable images: ', oldImages);
 
@@ -197,9 +131,6 @@ const constructDonationData = (body, files, donorId, res, donationId = null) => 
 }
 
 module.exports = {
-    // processFoodItemsFromRequest,
-    // processImageUploads,
-    // manageDonationImages,
     deleteFiles,
     constructDonationData
 };
