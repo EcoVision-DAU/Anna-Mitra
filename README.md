@@ -1,125 +1,128 @@
-{
-  "id": "58291",
-  "variant": "standard",
-  "title": "Password Regex Explanation"
-}
-# Password Regex Explanation
+# AnnaMitra – NGO Assistance & Donation Management Platform
 
-Your backend is validating passwords using the following regular expression:
-
-```
-/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
-```
-
-This pattern enforces strong password rules. Below is a complete explanation of what each part means.
+AnnaMitra is a web-based platform designed to connect NGOs, donors, and volunteers in a unified ecosystem.  
+It streamlines food donation management, user onboarding, NGO verification, volunteer activity tracking, and admin monitoring.
 
 ---
 
-## ✔ Password Requirements
+## 🚀 Features
 
-Your password **must satisfy all of the following conditions**:
+### 👥 User Roles
+- **Donor Dashboard** – Manage donations & contribution history  
+- **NGO Dashboard** – View requests, manage inventory, verify donors  
+- **Volunteer Dashboard** – Assist NGOs, update activity, receive tasks  
+- **Admin Dashboard** – Platform oversight, access hierarchy, user control  
 
-### 1. **Minimum Length**
-- Password must be **at least 8 characters long**.
-- Defined by:  
-  ```
-  {8,}
-  ```
+### 🧩 Frontend
+- EJS templating
+- Responsive UI for dashboards & pages
+- Clean form structure for all roles
 
-### 2. **At Least One Lowercase Letter**
-- Must contain a–z  
-  Regex part:
-  ```
-  (?=.*[a-z])
-  ```
-
-### 3. **At Least One Uppercase Letter**
-- Must contain A–Z  
-  Regex part:
-  ```
-  (?=.*[A-Z])
-  ```
-
-### 4. **At Least One Digit**
-- Must contain 0–9  
-  Regex part:
-  ```
-  (?=.*\d)
-  ```
-
-### 5. **At Least One Special Character**
-- Allowed special characters are:  
-  `@  $  !  %  *  ?  &`
-- Regex part:
-  ```
-  (?=.*[@$!%*?&])
-  ```
-
-### 6. **Only Certain Characters Are Allowed**
-Allowed characters:
-- Uppercase A–Z  
-- Lowercase a–z  
-- Digits 0–9  
-- Special characters: `@  $  !  %  *  ?  &`
-
-Regex part:
-```
-[A-Za-z\d@$!%*?&]
-```
-
-❌ Characters **not allowed**:
-- `.` (dot)
-- `_` (underscore)
-- `-` (dash)
-- `#` (hash)
-- Any other symbol not listed above
+### ⚙ Backend
+- **Node.js + Express.js**
+- **MongoDB + Mongoose**
+- **Passport.js Authentication**
+- **Joi Validations**
+- **Multer for File Uploads**
+- **bcrypt for Password Hashing**
 
 ---
 
-## ❌ Why Your Password Failed
+## 🧪 Testing & Quality Assurance
 
-You tried using:
+### ✔ Validation  
+- All forms validated using **Joi** to ensure strong & secure input handling.
 
-```
-202412072@daiict.ac.inA
-```
+### ✔ Security  
+- Authentication handled using **Passport Local Strategy**
+- Passwords encrypted using **bcrypt**
 
-This fails because:
-- It contains a **`.` (dot)** which is **not allowed** by the regex.
+### ✔ Workflow-Based QA  
+Branches:
+- **Feature Branch** → Development
+- **Prototype Branch** → Staging / Manual QA Testing
+- **Main Branch** → Final & Stable Build (deployment-ready)
 
-Everything else (uppercase, lowercase, digit, special char, length) is correct.
+Manual QA is performed before merging to the main branch.
 
 ---
 
-## ✔ Valid Examples
+## 🛠 Deployment Plan
 
-These passwords correctly follow the rule:
+Currently:
+- Not yet hosted
+
+Ready For:
+- Node hosting (Render, Railway, or VPS)
+- Integration with CI/CD & Docker in future phases
+
+Main branch will always contain the most stable version for hosting.
+
+---
+
+## 📑 Tech Stack Summary
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Node.js, Express.js |
+| Database | MongoDB, Mongoose |
+| Templating | EJS |
+| Authentication | Passport.js, bcrypt |
+| Validation | Joi |
+| File Uploads | Multer |
+| Future Ops | Docker, CI/CD |
+
+---
+
+## 📂 Folder Structure (Expected)
 
 ```
-Abcd1234!
-Daiict2024@A
-MyTest@123
-Password1&
-```
-
-If you want something similar to your password without the dot:
-
-```
-202412072@daiictA
+project/
+│── app.js / server.js
+│── package.json
+│── /views        → EJS templates
+│── /routes       → Route controllers
+│── /public       → CSS, JS, images
+│── /models       → Mongoose schemas
+│── /middleware   → auth & validation
+│── /uploads      → Multer files
+│── /config       → Passport & DB config
 ```
 
 ---
 
-## ✔ Want to Allow More Special Characters?
+## 📸 UI Highlights
 
-If you want to allow:
-- `.`
-- `_`
-- `-`
-- any other symbols
+- Contact Page  
+- About Page  
+- NGO Dashboard  
+- Donor Dashboard  
+- Volunteer Dashboard  
+- Profile Page  
+- Admin Dashboard  
 
-I can modify the regex for you.
+*(as shown in the PPT)*
 
-Just tell me:
-**Which special characters should be allowed?**
+---
 
+## 📌 Future Enhancements
+
+- Add automated tests (Jest + Supertest)
+- Deploy with CI/CD + Docker
+- Improve dashboard analytics
+- Integrate SMS/email notifications
+
+---
+
+## 🧑‍💻 Contributors
+Team: **Group Project – AnnaMitra b3**
+
+---
+
+If you want, I can also generate:
+✅ `CONTRIBUTING.md`  
+✅ `API Documentation.md`  
+✅ `Installation & Setup Guide`  
+Or a fully formatted **GitHub release description**.
+
+Just tell me!
